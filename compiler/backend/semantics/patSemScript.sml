@@ -173,7 +173,7 @@ val do_app_def = Define `
     | (Op Opref, [v]) =>
         let (s',n) = (store_alloc (Refv v) s.refs) in
           SOME (s with refs := s', Rval (Loc n))
-    | (Op (Init_global_var idx), [v]) =>
+    | (Op (GlobalVarInit idx), [v]) =>
         if idx < LENGTH s.globals then
           (case EL idx s.globals of
               NONE => SOME ((s with globals := LUPDATE (SOME v) idx s.globals), Rval (Conv tuple_tag []))
@@ -360,6 +360,8 @@ val do_app_def = Define `
                   )
         | _ => NONE
       )
+    | (Op ConfigGC, [Litv (IntLit n1); Litv (IntLit n2)]) =>
+         SOME (s, Rval (Conv tuple_tag []))
     | (Op (FFI n), [Litv (StrLit conf); Loc lnum]) =>
         (case store_lookup lnum s.refs of
           SOME (W8array ws) =>
@@ -380,7 +382,7 @@ val do_app_def = Define `
   )))`;
 
 val op_thms = { nchotomy = patLangTheory.op_nchotomy, case_def = patLangTheory.op_case_def}
-val modop_thms = {nchotomy = modLangTheory.op_nchotomy, case_def = modLangTheory.op_case_def}
+val flatop_thms = {nchotomy = flatLangTheory.op_nchotomy, case_def = flatLangTheory.op_case_def}
 val astop_thms = {nchotomy = astTheory.op_nchotomy, case_def = astTheory.op_case_def}
 val list_thms = { nchotomy = list_nchotomy, case_def = list_case_def}
 val option_thms = { nchotomy = option_nchotomy, case_def = option_case_def}
@@ -388,7 +390,7 @@ val v_thms = { nchotomy = theorem"v_nchotomy", case_def = definition"v_case_def"
 val sv_thms = { nchotomy = semanticPrimitivesTheory.store_v_nchotomy, case_def = semanticPrimitivesTheory.store_v_case_def }
 val lit_thms = { nchotomy = astTheory.lit_nchotomy, case_def = astTheory.lit_case_def}
 val eqs = LIST_CONJ (map prove_case_eq_thm
-  [op_thms, modop_thms, astop_thms, list_thms, option_thms, v_thms, sv_thms, lit_thms])
+  [op_thms, flatop_thms, astop_thms, list_thms, option_thms, v_thms, sv_thms, lit_thms])
 
 val do_app_cases = save_thm("do_app_cases",
   ``patSem$do_app s op vs = SOME x`` |>
@@ -453,10 +455,6 @@ val evaluate_def = tDefine "evaluate"`
       if n < LENGTH env
       then Rval [EL n env]
       else Rerr (Rabort Rtype_error))) ∧
-  (evaluate env s [Var_global _ n] = (s,
-      if n < LENGTH s.globals ∧ IS_SOME (EL n s.globals)
-      then Rval [THE (EL n s.globals)]
-      else Rerr (Rabort Rtype_error))) ∧
   (evaluate env s [Fun _ e] = (s, Rval [Closure env e])) ∧
   (evaluate env s [App _ op es] =
    case fix_clock s (evaluate env s (REVERSE es)) of
@@ -490,22 +488,20 @@ val evaluate_def = tDefine "evaluate"`
    | (s, Rval vs) => evaluate env s [e2]
    | res => res) ∧
   (evaluate env s [Letrec _ funs e] =
-   evaluate ((build_rec_env funs env)++env) s [e]) ∧
-  (evaluate env s [Extend_global _ n] =
-   (s with globals := s.globals++GENLIST(K NONE) n, Rval [Conv tuple_tag []]))`
+   evaluate ((build_rec_env funs env)++env) s [e])`
   (wf_rel_tac`inv_image ($< LEX $<)
   (λx. case x of (_,s,es) => (s.clock,exp1_size es))`
   THEN rpt strip_tac
   THEN imp_res_tac fix_clock_IMP
   THEN imp_res_tac do_if_either_or
-  THEN fs [dec_clock_def])
+  THEN fs [dec_clock_def]);
 
 val evaluate_ind = theorem"evaluate_ind"
 
 val do_app_clock = Q.store_thm("do_app_clock",
   `patSem$do_app s op vs = SOME(s',r) ==> s.clock = s'.clock`,
   rpt strip_tac THEN fs[do_app_cases] >> every_case_tac >>
-  fs[LET_THM,semanticPrimitivesTheory.store_alloc_def,semanticPrimitivesTheory.store_assign_def] >> rw[])
+  fs[LET_THM,semanticPrimitivesTheory.store_alloc_def,semanticPrimitivesTheory.store_assign_def] >> rw[]);
 
 val evaluate_clock = Q.store_thm("evaluate_clock",
   `(∀env s1 e r s2. evaluate env s1 e = (s2,r) ⇒ s2.clock ≤ s1.clock)`,
