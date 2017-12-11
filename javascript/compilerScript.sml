@@ -1,7 +1,6 @@
-open preamble stringTheory
+open preamble stringTheory basisProgTheory
      lexer_funTheory lexer_implTheory
-     cmlParseTheory
-     inferTheory;
+     cmlParseTheory inferTheory;
 
 val _ = new_theory"compiler";
 
@@ -33,7 +32,7 @@ val compile_def = Define `
     case parse_prog (lexer_fun input) of
       | NONE => Failure ParseError
       | SOME prog =>
-          case infertype_prog ^(inferencer_config) prog of
+          case infertype_prog ^(inferencer_config) (basis ++ prog) of
             | Failure (locs, msg) =>
                 Failure (TypeError (concat [msg; implode " at "; locs_to_string locs]))
             | Success _ =>
@@ -43,6 +42,8 @@ val compile_def = Define `
 
 val _ = export_theory();
 
+``compile ""`` |> EVAL;
+``compile "val _ = \"foo\""`` |> EVAL;
 ``compile "val _ = ();"`` |> EVAL;
 ``compile "val _ = 5 + 5;"`` |> EVAL;
 ``compile "val _ = F;"`` |> EVAL;
