@@ -1,7 +1,7 @@
 open preamble stringTheory
+     basisProgTheory
      lexer_funTheory lexer_implTheory
      cmlParseTheory inferTheory;
-(* basisProgTheory *)
 
 val _ = new_theory"compiler";
 
@@ -37,11 +37,11 @@ val javascript_ast_to_source_def = Define `
   javascript_ast_to_source ast = "todo"`;
 
 val compile_def = Define `
-  compile inferencer_config prelude input =
+  compile inf_conf prelude input =
     case parse_prog (lexer_fun input) of
       | NONE => Failure ParseError
       | SOME prog =>
-          case infertype_prog inferencer_config (prelude ++ prog) of
+          case infertype_prog inf_conf (prelude ++ prog) of
             | Failure (locs, msg) =>
                 Failure (TypeError (concat [msg; implode " at "; locs_to_string locs]))
             | Success _ =>
@@ -50,18 +50,17 @@ val compile_def = Define `
                   | SOME ast => Success ast`;
 
 val compile_to_javascript_def = Define `
-  (*compile_to_javascript input = compile ^(inferencer_config) basis input`;*)
   compile_to_javascript input = case compile ^(inferencer_config) [] input of
     | Failure error => error_to_str error
-    | Success ast => javascript_ast_to_source ast`;
+    | Success ast => strlit (javascript_ast_to_source ast)`;
 
 val _ = export_theory();
 
-``compile ""`` |> EVAL;
-``compile "val _ = \"foo\";"`` |> EVAL;
-``compile "val _ = ();"`` |> EVAL;
-``compile "val _ = 5 + 5;"`` |> EVAL;
-``compile "val _ = F;"`` |> EVAL;
-``compile "val _ = F ==> T;"`` |> EVAL;
-``compile "val _ = Define `foo bar = bar + 1`;"`` |> EVAL;
+``compile_to_javascript ""`` |> EVAL;
+``compile_to_javascript "val _ = \"foo\";"`` |> EVAL;
+``compile_to_javascript "val _ = ();"`` |> EVAL;
+``compile_to_javascript "val _ = 5 + 5;"`` |> EVAL;
+``compile_to_javascript "val _ = F;"`` |> EVAL;
+``compile_to_javascript "val _ = F ==> T;"`` |> EVAL;
+``compile_to_javascript "val _ = Define `foo bar = bar + 1`;"`` |> EVAL;
 
