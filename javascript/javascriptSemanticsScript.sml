@@ -1,4 +1,4 @@
-open preamble javascriptAstTheory;
+open preamble javascriptMockAstTheory;
 
 val _ = new_theory"javascriptSemantics";
 
