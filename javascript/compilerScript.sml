@@ -1,7 +1,11 @@
 open preamble stringTheory
-     basisProgTheory
+     basisSubsetTheory
      lexer_funTheory lexer_implTheory
      cmlParseTheory inferTheory;
+(*
+     basisProgTheory
+     std_preludeTheory
+*)
 
 val _ = new_theory"compiler";
 
@@ -40,27 +44,33 @@ val compile_def = Define `
   compile inf_conf prelude input =
     case parse_prog (lexer_fun input) of
       | NONE => Failure ParseError
-      | SOME prog =>
+      | SOME prog =>(*
           case infertype_prog inf_conf (prelude ++ prog) of
             | Failure (locs, msg) =>
                 Failure (TypeError (concat [msg; implode " at "; locs_to_string locs]))
-            | Success _ =>
+            | Success _ =>*)
                 case cakeml_to_javascript prog of
                   | NONE => Failure CompileError
                   | SOME ast => Success ast`;
 
 val compile_to_javascript_def = Define `
-  compile_to_javascript input = case compile ^(inferencer_config) [] input of
+  compile_to_javascript input = case compile ^(inferencer_config) basisSubset input of
     | Failure error => error_to_str error
     | Success ast => strlit (javascript_ast_to_source ast)`;
 
+val cakeml_src_to_ast_def = Define `
+  cakeml_src_to_ast input = case compile ^(inferencer_config) basisSubset input of
+    | Failure error => NONE
+    | Success ast => SOME ast`;
+
 val _ = export_theory();
 
-``compile_to_javascript ""`` |> EVAL;
-``compile_to_javascript "val _ = \"foo\";"`` |> EVAL;
-``compile_to_javascript "val _ = ();"`` |> EVAL;
-``compile_to_javascript "val _ = 5 + 5;"`` |> EVAL;
-``compile_to_javascript "val _ = F;"`` |> EVAL;
-``compile_to_javascript "val _ = F ==> T;"`` |> EVAL;
-``compile_to_javascript "val _ = Define `foo bar = bar + 1`;"`` |> EVAL;
+``cakeml_src_to_ast ""`` |> EVAL;
+``cakeml_src_to_ast "val _ = \"foo\";"`` |> EVAL;
+``cakeml_src_to_ast "val _ = ();"`` |> EVAL;
+``cakeml_src_to_ast "val fivePlusFive = 5 + \"hej\";"`` |> EVAL;
+``cakeml_src_to_ast "val five = 5;"`` |> EVAL;
+``cakeml_src_to_ast "val _ = F;"`` |> EVAL;
+``cakeml_src_to_ast "val _ = F ==> T;"`` |> EVAL;
+``cakeml_src_to_ast "val _ = Asdf `foo bar = bar + 1`;"`` |> EVAL;
 
