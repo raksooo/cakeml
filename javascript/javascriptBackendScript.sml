@@ -1,7 +1,25 @@
-open preamble javascriptAstTheory javascriptSemanticsTheory cakemlMockAstAndSemanticsTheory;
+open preamble javascriptAstTheory javascriptSemanticsTheory
+		 astTheory;
 
 val _ = new_theory"javascriptBackend";
 
+val ata_exp_def = Define `
+	(ata_exp (Lannot exp _) = ata_exp exp) /\
+	(ata_exp (Con (SOME (Short "true")) _) = JSLit (JSBool T)) /\
+	(ata_exp (Con (SOME (Short "false")) _) = JSLit (JSBool F))`;
+
+val ata_dec_def = Define `
+	(ata_dec (Dlet _ Pany exp) = JSExp (ata_exp exp)) /\
+	(ata_dec (Dlet _ (Pvar name) exp) = JSLet name (ata_exp exp))`;
+
+val ata_top_def = Define `
+	(ata_top (Tdec dec) = JSStm (ata_dec dec))`;
+
+val ast_to_ast_def = Define `
+	(ast_to_ast [] = []) /\
+	(ast_to_ast (a::ast) = (ata_top a)::(ast_to_ast ast))`;
+
+(*
 val ast_to_ast_def = Define `
   (ast_to_ast (Cml_lit (Cml_boolean b)) = SOME (Js_lit (Js_boolean b))) /\
   (ast_to_ast (Cml_unary op expr) = let t = ast_to_ast expr
@@ -19,6 +37,7 @@ val ast_to_ast_def = Define `
           SOME (Js_binary Js_or ne1 e2)
       | _ => NONE)`;
 val ast_to_ast_ind = fetch "-" "ast_to_ast_ind"
+*)
 
 val _ = export_theory();
 
