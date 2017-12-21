@@ -6,7 +6,9 @@ val _ = new_theory"javascriptBackend";
 val ata_exp_def = Define `
 	(ata_exp (Lannot exp _) = ata_exp exp) /\
 	(ata_exp (Con (SOME (Short "true")) _) = JSLit (JSBool T)) /\
-	(ata_exp (Con (SOME (Short "false")) _) = JSLit (JSBool F))`;
+	(ata_exp (Con (SOME (Short "false")) _) = JSLit (JSBool F)) /\
+	(ata_exp (Log And exp1 exp2) = JSApp (JSOpb JSAnd) [ata_exp exp1; ata_exp exp2])
+	(ata_exp (Log Or exp1 exp2) = JSApp (JSOpb JSOr) [ata_exp exp1; ata_exp exp2])`;
 
 val ata_dec_def = Define `
 	(ata_dec (Dlet _ Pany exp) = JSExp (ata_exp exp)) /\

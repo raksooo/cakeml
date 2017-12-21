@@ -33,5 +33,11 @@ val cakeml_src_to_ast_def = Define `
     | Failure error => Failure (error_to_str error)
     | Success ast => Success ast`;
 
+val compile_and_compare_def = Define `
+	compile_and_compare input = case compile init_config basis input of
+		| Failure error => Failure (error_to_str error)
+		| Success ast => Success (ast, ast_to_ast ast)`;
+
+
 val _ = export_theory();
 
