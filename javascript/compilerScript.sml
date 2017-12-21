@@ -1,6 +1,7 @@
 open preamble basisProgTheory errorHandlingTheory
      lexer_funTheory lexer_implTheory
-     cmlParseTheory inferTheory;
+     cmlParseTheory inferTheory
+		 javascriptBackendTheory;
 
 val _ = new_theory"compiler";
 
@@ -24,8 +25,8 @@ val compile_def = Define `
 
 val compile_to_javascript_def = Define `
   compile_to_javascript input = case compile init_config basis input of
-    | Failure error => error_to_str error
-    | Success ast => strlit (javascript_ast_to_source ast)`;
+    | Failure error => Failure (error_to_str error)
+    | Success ast => Success (ast_to_ast ast)`;
 
 val cakeml_src_to_ast_def = Define `
   cakeml_src_to_ast input = case compile init_config basis input of
