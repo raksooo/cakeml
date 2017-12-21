@@ -12,6 +12,7 @@ val cakeml_semantics_def = Define `
   ==> cakeml_semantics prog = javascript_semantics js`;
 *)
 
+(*
 val compiler_proof = Q.store_thm("compiler_proof",
   `!expr js_expr. ast_to_ast expr = SOME js_expr ==> cml_sem expr = js_sem js_expr`,
   recInduct ast_to_ast_ind
@@ -23,5 +24,6 @@ val compiler_proof = Q.store_thm("compiler_proof",
   >> fs [cml_sem_def, js_sem_def, ast_to_ast_def]
   >> metis_tac []
 );
+*)
 
 val _ = export_theory()
