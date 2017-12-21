@@ -1,45 +1,47 @@
-open preamble javascriptAstTheory javascriptSemanticsTheory
-		 astTheory;
+open preamble javascriptAstTheory javascriptSemanticsTheory astTheory stringTheory;
 
 val _ = new_theory"javascriptBackend";
 
+val	sequence_option_def = Define `
+	sequence_option options = case options of
+		| (NONE :: _) => NONE
+		| (SOME opt :: []) => SOME [opt]
+		| (SOME opt :: options) => case sequence_option options of
+				| NONE => NONE
+				| (SOME options) => SOME (opt :: options)`;
+
+val apply_if_some_def = Define `
+	(apply_if_some _ NONE = NONE) /\
+	(apply_if_some f (SOME v) = SOME (f v))`;
+
+val apply_if_some_list_def = Define `
+	apply_if_some_list f options = apply_if_some f (sequence_option options)`;
+
 val ata_exp_def = Define `
 	(ata_exp (Lannot exp _) = ata_exp exp) /\
-	(ata_exp (Con (SOME (Short "true")) _) = JSLit (JSBool T)) /\
-	(ata_exp (Con (SOME (Short "false")) _) = JSLit (JSBool F)) /\
-	(ata_exp (Log And exp1 exp2) = JSApp (JSOpb JSAnd) [ata_exp exp1; ata_exp exp2])
-	(ata_exp (Log Or exp1 exp2) = JSApp (JSOpb JSOr) [ata_exp exp1; ata_exp exp2])`;
+	(ata_exp (Con (SOME (Short "true")) _) = SOME (JSLit (JSBool T))) /\
+	(ata_exp (Con (SOME (Short "false")) _) = SOME (JSLit (JSBool F))) /\
+	(ata_exp (Log And exp1 exp2) = let exps = [ata_exp exp1; ata_exp exp2]
+		in apply_if_some_list (JSApp (JSOpb JSAnd)) exps) /\
+	(ata_exp (Log Or exp1 exp2) = let exps = [ata_exp exp1; ata_exp exp2]
+		in apply_if_some_list (JSApp (JSOpb JSOr)) exps) /\
+	(ata_exp _ = NONE)`;
 
 val ata_dec_def = Define `
-	(ata_dec (Dlet _ Pany exp) = JSExp (ata_exp exp)) /\
-	(ata_dec (Dlet _ (Pvar name) exp) = JSLet name (ata_exp exp))`;
+	(ata_dec (Dlet _ Pany exp) = apply_if_some JSExp (ata_exp exp)) /\
+	(ata_dec (Dlet _ (Pvar name) exp) = apply_if_some (JSLet name) (ata_exp exp)) /\
+	(ata_dec _ = NONE)`;
 
 val ata_top_def = Define `
-	(ata_top (Tdec dec) = JSStm (ata_dec dec))`;
+	(ata_top (Tdec dec) = apply_if_some JSStm (ata_dec dec)) /\
+	(ata_top _ = NONE)`;
 
-val ast_to_ast_def = Define `
-	(ast_to_ast [] = []) /\
-	(ast_to_ast (a::ast) = (ata_top a)::(ast_to_ast ast))`;
+val ast_to_ast_unsequenced_def = Define `
+	(ast_to_ast_unsequenced [] = []) /\
+	(ast_to_ast_unsequenced (a::ast) = (ata_top a)::(ast_to_ast_unsequenced ast))`;
 
-(*
-val ast_to_ast_def = Define `
-  (ast_to_ast (Cml_lit (Cml_boolean b)) = SOME (Js_lit (Js_boolean b))) /\
-  (ast_to_ast (Cml_unary op expr) = let t = ast_to_ast expr
-    in case (op, t) of
-        (Cml_not, SOME e) => SOME (Js_unary Js_not e)
-      | _ => NONE) /\
-  (ast_to_ast (Cml_binary op expr1 expr2) = let
-      t1 = ast_to_ast expr1;
-      t2 = ast_to_ast expr2
-    in case (op, t1, t2) of
-        (Cml_and, SOME e1, SOME e2) => SOME (Js_binary Js_and e1 e2)
-      | (Cml_or, SOME e1, SOME e2) => SOME (Js_binary Js_or e1 e2)
-      | (Cml_eq, SOME e1, SOME e2) => SOME (Js_binary Js_eq e1 e2)
-      | (Cml_impl, SOME e1, SOME e2) => let ne1 = Js_unary Js_not e1 in
-          SOME (Js_binary Js_or ne1 e2)
-      | _ => NONE)`;
-val ast_to_ast_ind = fetch "-" "ast_to_ast_ind"
-*)
+val ast_to_ast_sequenced_def = Define `
+	ast_to_ast ast = sequence_option (ast_to_ast_unsequenced ast)`;
 
 val _ = export_theory();
 
