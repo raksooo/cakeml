@@ -1,21 +1,40 @@
-open preamble javascriptAstTheory semanticPrimitivesTheory;
+open preamble javascriptAstTheory ffiTheory;
 
 val _ = new_theory"javascriptSemantics";
 
-val fix_clock_def = Define `
-	fix_clock s (s', res) =
-		let cl = if s'.clock <= s.clock then s'.clock else s.clock
-		in ((s' with <| clock := cl |>), res)`;
+val js_v_def = Hol_datatype `
+ js_v = JSLitv of js_lit`;
 
-val js_evaluate_def = Define `
-	(js_evaluate st env [] = (st, Rval [])) /\
-  (js_evaluate st env (e1::e2::es) =
-		case fix_clock st (js_evaluate st env [e1]) of
-				(st', Rval v1) =>
-					(case js_evaluate st' env (e2::es) of
-							(st'', Rval vs) => (st'', Rval (HD v1::vs))
+val state_def = Hol_datatype `
+	state =
+		<| clock : num
+		 (*; refs : v store*)
+		 ; defined_mods : (string list) set
+		 |>`;
+
+val fix_clock_def = Define `
+	fix_clock st (st', res) =
+		let cl = if st'.clock <= st.clock then st'.clock else st.clock
+		in ((st' with <| clock := cl |>), res)`;
+
+val dec_clock_def = Define `
+ dec_clock st = st with <| clock := st.clock - 1 |>`;
+
+val js_result_def = Hol_datatype `
+ js_result =
+  | JSRval of 'a
+  | JSRerr of 'b`;
+
+val js_evaluate_exp_def = Define `
+	(js_evaluate_exp st env [] = (st, JSRval [])) /\
+  (js_evaluate_exp st env (e1::e2::es) =
+		case fix_clock st (js_evaluate_exp st env [e1]) of
+				(st', JSRval v1) =>
+					(case js_evaluate_exp st' env (e2::es) of
+							(st'', JSRval vs) => (st'', JSRval (HD v1::vs))
 						| res => res)
-			| res => res)`;
+			| res => res) /\
+	(js_evaluate_exp st env [JSLit (JSBool b)] = (st, JSRval [JSLitv (JSBool b)]))`;
 
 val _ = export_theory();
 
