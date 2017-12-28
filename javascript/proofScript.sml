@@ -1,5 +1,4 @@
-open preamble semanticsTheory javascriptSemanticsTheory javascriptBackendTheory primSemEnvTheory
-  cakemlMockAstAndSemanticsTheory;
+open preamble semanticsTheory javascriptSemanticsTheory javascriptBackendTheory primSemEnvTheory;
 
 val _ = new_theory"proof"
 
