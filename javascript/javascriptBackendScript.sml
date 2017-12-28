@@ -17,14 +17,18 @@ val apply_if_some_def = Define `
 val apply_if_some_list_def = Define `
 	apply_if_some_list f options = apply_if_some f (sequence_option options)`;
 
+val ata_op_def = Define `
+	ata_op op [a; b] =
+		(JSApp (JSApp (JSFun "a" (JSFun "b" (JSOp op (JSVar "a") (JSVar "b")))) b) a)`;
+
 val ata_exp_def = Define `
 	(ata_exp (Lannot exp _) = ata_exp exp) /\
 	(ata_exp (Con (SOME (Short "true")) _) = SOME (JSLit (JSBool T))) /\
 	(ata_exp (Con (SOME (Short "false")) _) = SOME (JSLit (JSBool F))) /\
 	(ata_exp (Log And exp1 exp2) = let exps = [ata_exp exp1; ata_exp exp2]
-		in apply_if_some_list (JSApp (JSOpb JSAnd)) exps) /\
+		in apply_if_some_list (ata_op (JSOpb JSAnd)) exps) /\
 	(ata_exp (Log Or exp1 exp2) = let exps = [ata_exp exp1; ata_exp exp2]
-		in apply_if_some_list (JSApp (JSOpb JSOr)) exps) /\
+		in apply_if_some_list (ata_op (JSOpb JSOr)) exps) /\
 	(ata_exp _ = NONE)`;
 
 val ata_dec_def = Define `
