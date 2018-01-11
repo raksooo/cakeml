@@ -99,35 +99,30 @@ val js_par_zip_def = Define `
 
 val js_evaluate_exp_def = tDefine "js_evaluate_exp" `
 	(js_evaluate_exp st env [] = (st, env, JSRval [])) /\
-  (js_evaluate_exp st env (e1::e2::es) =
-		case fix_clock st (js_evaluate_exp st env [e1]) of
-				(st', env', JSRval v1) =>
-					(case js_evaluate_exp st' env' (e2::es) of
-							(st'', env'', JSRval vs) => (st'', env'', JSRval (HD v1::vs))
-						| res => res)
+  (js_evaluate_exp st env (e1::e2::es) = case fix_clock st (js_evaluate_exp st env [e1]) of
+			| (st', env', JSRval v1) => (case js_evaluate_exp st' env' (e2::es) of
+					|	(st'', env'', JSRval vs) => (st'', env'', JSRval (HD v1::vs))
+					| res => res)
 			| res => res) /\
 	(js_evaluate_exp st env [JSLit lit] = (st, env, JSRval [JSLitv lit])) /\
+	(js_evaluate_exp st env [JSFun pars exp] = (st, env, JSRval [JSFunv pars exp])) /\
 	(js_evaluate_exp st env [JSVar name] = case lookup_var env name of
-		| SOME jsvar => (st, env, JSRval [jsvar])
-		| NONE => (st, env, JSRerr ("ReferenceError: " ++ name ++ " is not defined"))) /\
-	(js_evaluate_exp st env [JSApp (JSLit lit) args] = case js_evaluate_exp st env [JSLit lit] of
-		| (st', env', JSRval [litv]) => (st', env',
-				JSEerr ("TypeError: " ++ (js_v_to_string litv) ++ " is not a function"))
-		| res => res) /\
-	(js_evaluate_exp st env [JSApp (JSVar name) args] = case js_evaluate_exp st env [JSVar name] of
-		| (st', env', JSRval [JSFunv pars exp]) => js_evaluate_exp st' env' [JSApp (JSFun pars exp) args]
-		| res => res) /\
-	(js_evaluate_exp st env [JSApp (JSFun pars exp) args] = case js_evaluate_exp st env args of
-		| (st', env', JSRval vs) => (case var_declaration (enter_context env') (js_par_zip (pars, vs)) of
-				| SOME env'' => js_evaluate_exp st' env'' [exp]
-				| NONE => (st', env',
-						JSRerr "SyntaxError: Duplicate parameter name not allowed in this context"))
-		| res => res) /\
+			| SOME jsvar => (st, env, JSRval [jsvar])
+			| NONE => (st, env, JSRerr ("ReferenceError: " ++ name ++ " is not defined"))) /\
 	(js_evaluate_exp st env [JSApp exp args] = case js_evaluate_exp st env [exp] of
-		| (st', env', JSRval [JSFunv pars exp']) => js_evaluate_exp st' env' [JSApp (JSFun pars exp') args]
-		| (st', env', JSRval [JSLitv lit]) => js_evaluate_exp st' env' [JSApp (JSLit lit) args]
-		| (st', env', JSRval [JSUndefined]) => (st', env', JSRerr "TypeError: undefined is not a function")
-		| res => res) /\
+			| (st', env', JSRval [JSLitv lit]) => (st', env',
+					JSEerr ("TypeError: " ++ (js_v_to_string (JSLitv litv)) ++ " is not a function"))
+			| (st', env', JSRval [JSUndefined]) => (st', env',
+					JSRerr "TypeError: undefined is not a function")
+			| (st', env', JSRval [JSFunv pars exp']) => case js_evaluate_exp st env args of
+					| (st', env', JSRval vs) => let
+								env'' = enter_context env';
+								parargs = js_par_zip (pars, vs)
+							in (case var_declaration env'' parargs of
+								| SOME env'' => js_evaluate_exp st' env'' [exp]
+								| NONE => (st', env',
+										JSRerr "SyntaxError: Duplicate parameter name not allowed in this context"))
+			| res => res) /\
 	(js_evaluate_exp st env _ = (st, env, NOT_IMPLEMENTED))`
 	(cheat);
 
