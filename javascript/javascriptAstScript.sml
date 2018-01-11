@@ -6,9 +6,10 @@ val js_varN_def = type_abbrev("js_varN", ``:string``);
 
 val js_lit_def = Hol_datatype `
   js_lit =
-      JSIntLit of int
+    | JSIntLit of int
     | JSStrLit of string
-		| JSBool of bool`;
+		| JSBool of bool
+		| JSNull`;
 
 val js_opn_def = Hol_datatype `
   js_opn = JSPlus | JSMinus | JSTimes | JSDivide | JSModulo`;
