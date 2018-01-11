@@ -114,12 +114,13 @@ val js_evaluate_exp_def = tDefine "js_evaluate_exp" `
 					JSEerr ("TypeError: " ++ (js_v_to_string (JSLitv litv)) ++ " is not a function"))
 			| (st', env', JSRval [JSUndefined]) => (st', env',
 					JSRerr "TypeError: undefined is not a function")
-			| (st', env', JSRval [JSFunv pars exp']) => case js_evaluate_exp st env args of
-					| (st', env', JSRval vs) => let
-								env'' = enter_context env';
+			| (st', env', JSRval [JSFunv pars exp']) => case js_evaluate_exp st' env' args of
+					| (st'', env'', JSRval vs) => let
+								env''' = enter_context env'';
 								parargs = js_par_zip (pars, vs)
-							in (case var_declaration env'' parargs of
-								| SOME env'' => js_evaluate_exp st' env'' [exp]
+							in (case var_declaration env''' parargs of
+								| SOME env'''' => let (_, _, res) = js_evaluate_exp st'' env'''' [exp]
+										in (st', env', res)
 								| NONE => (st', env',
 										JSRerr "SyntaxError: Duplicate parameter name not allowed in this context"))
 			| res => res) /\
