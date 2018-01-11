@@ -3,7 +3,10 @@ open preamble javascriptAstTheory ffiTheory listTheory;
 val _ = new_theory"javascriptSemantics";
 
 val js_v_def = Hol_datatype `
- js_v = JSLitv of js_lit`;
+	js_v =
+		| JSUndefined
+		| JSLitv of js_lit
+		| JSFunv of js_varN list => js_exp`;
 
 val state_def = Hol_datatype `
 	state =
