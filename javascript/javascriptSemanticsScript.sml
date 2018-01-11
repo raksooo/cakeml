@@ -8,17 +8,12 @@ val js_v_def = Hol_datatype `
 		| JSLitv of js_lit
 		| JSFunv of js_varN list => js_exp`;
 
-val state_def = Hol_datatype `
-	state =
-		<| clock : num
-		 (*; refs : v store*)
-		 ; defined_mods : (string list) set
-		 |>`;
+val state_def = Hol_datatype `state = <| clock : num |>`;
 
 val fix_clock_def = Define `
-	fix_clock st (st', res) =
+	fix_clock st (st', env, res) =
 		let cl = if st'.clock <= st.clock then st'.clock else st.clock
-		in ((st' with <| clock := cl |>), res)`;
+		in ((st' with <| clock := cl |>), env, res)`;
 
 val dec_clock_def = Define `dec_clock st = st with <| clock := st.clock - 1 |>`;
 
