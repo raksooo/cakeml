@@ -1,4 +1,4 @@
-open preamble javascriptAstTheory ffiTheory;
+open preamble javascriptAstTheory ffiTheory listTheory;
 
 val _ = new_theory"javascriptSemantics";
 
