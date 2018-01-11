@@ -89,18 +89,36 @@ val js_v_to_string_def = Define `
 val js_result_def = Hol_datatype `
  js_result =
   | JSRval of 'a
-  | JSRerr of 'b`;
+	| JSRerr of 'b`;
 
-val js_evaluate_exp_def = Define `
-	(js_evaluate_exp st env [] = (st, JSRval [])) /\
+val js_par_zip_def = Define `
+	(js_par_zip ([], args) = []) /\
+	(js_par_zip (par::pars, []) = (par, JSUndefined) :: (js_par_zip (pars, []))) /\
+	(js_par_zip (par::pars, arg::args) = (par, arg) :: (js_par_zip (pars, args)))`;
+
+val js_evaluate_exp_def = tDefine "js_evaluate_exp" `
+	(js_evaluate_exp st env [] = (st, env, JSRval [])) /\
   (js_evaluate_exp st env (e1::e2::es) =
 		case fix_clock st (js_evaluate_exp st env [e1]) of
-				(st', JSRval v1) =>
-					(case js_evaluate_exp st' env (e2::es) of
-							(st'', JSRval vs) => (st'', JSRval (HD v1::vs))
+				(st', env', JSRval v1) =>
+					(case js_evaluate_exp st' env' (e2::es) of
+							(st'', env'', JSRval vs) => (st'', env'', JSRval (HD v1::vs))
 						| res => res)
 			| res => res) /\
-	(js_evaluate_exp st env [JSLit (JSBool b)] = (st, JSRval [JSLitv (JSBool b)]))`;
+	(js_evaluate_exp st env [JSLit (JSBool b)] = (st, env, JSRval [JSLitv (JSBool b)])) /\
+	(js_evaluate_exp st env [JSVar name] = case lookup_var env name of
+		| SOME jsvar => (st, env, JSRval [jsvar])
+		| NONE => (st, env, JSRerr ("ReferenceError: " ++ name ++ " is not defined"))) /\
+	(js_evaluate_exp st env [JSApp (JSVar name) args] = case js_evaluate_exp st env [JSVar name] of
+		| (st', env', JSRval [(JSFunv pars exp)]) => js_evaluate_exp st env [JSApp (JSFun pars exp) args]
+		| res => res) /\
+	(js_evaluate_exp st env [JSApp (JSFun pars exp) args] = case js_evaluate_exp st env args of
+		| (st', env', JSRval vs) => (case var_declaration (enter_context env') (js_par_zip (pars, vs)) of
+				| SOME env'' => js_evaluate_exp st' env'' [exp]
+				| NONE => (st', env',
+						JSRerr "SyntaxError: Duplicate parameter name not allowed in this context"))
+		| res => res)`
+	(cheat);
 
 val _ = export_theory();
 
