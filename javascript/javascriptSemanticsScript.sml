@@ -89,7 +89,8 @@ val js_v_to_string_def = Define `
 val js_result_def = Hol_datatype `
  js_result =
   | JSRval of 'a
-	| JSRerr of 'b`;
+	| JSRerr of 'b
+	| NOT_IMPLEMENTED`;
 
 val js_par_zip_def = Define `
 	(js_par_zip ([], args) = []) /\
@@ -117,7 +118,8 @@ val js_evaluate_exp_def = tDefine "js_evaluate_exp" `
 				| SOME env'' => js_evaluate_exp st' env'' [exp]
 				| NONE => (st', env',
 						JSRerr "SyntaxError: Duplicate parameter name not allowed in this context"))
-		| res => res)`
+		| res => res) /\
+	(js_evaluate_exp st env _ = (st, env, NOT_IMPLEMENTED))`
 	(cheat);
 
 val _ = export_theory();
