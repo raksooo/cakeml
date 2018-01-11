@@ -22,26 +22,26 @@ val js_opb_def = Hol_datatype `
 
 val js_op_def = Hol_datatype `
   js_op =
-      JSOpb of js_opb
+    | JSOpb of js_opb
     | JSOpn of js_opn
     | JSOpc of js_opc`;
 
 val js_exp_def = Hol_datatype `
   js_exp =
-      JSLit of js_lit
+    | JSLit of js_lit
     | JSOp of js_op => js_exp => js_exp
 		| JSVar of js_varN
-		| JSFun of js_varN => js_exp
-		| JSApp of js_exp => js_exp`;
+		| JSFun of js_varN list => js_exp
+		| JSApp of js_exp => js_exp list`;
 
 val js_stm_def = Hol_datatype `
 	js_stm =
-			JSLet of js_varN => js_exp
+		| JSLet of js_varN => js_exp
 		| JSExp of js_exp`;
 
 val js_top_def = Hol_datatype `
 	js_top =
-			JSStm of js_stm`;
+		| JSStm of js_stm`;
 
 val _ = type_abbrev( "js_prog" , ``: js_top list``);
 
