@@ -6,8 +6,8 @@ val js_varN_def = type_abbrev("js_varN", ``:string``);
 
 val js_lit_def = Hol_datatype `
   js_lit =
-    | JSIntLit of int
-    | JSStrLit of string
+    | JSInteger of int
+    | JSString of string
 		| JSBool of bool
 		| JSNull`;
 
