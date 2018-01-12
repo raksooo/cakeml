@@ -107,7 +107,9 @@ val js_to_boolean = Define `
 
 val js_evaluate_bop_def = Define `
 	(js_evaluate_bop JSAnd v1 v2 = if js_to_boolean v1 then v2 else v1) /\
-	(js_evaluate_bop JSOr v1 v2 = if js_to_boolean v1 then v1 else v2)`;
+	(js_evaluate_bop JSOr v1 v2 = if js_to_boolean v1 then v1 else v2) /\
+	(js_evaluate_bop JSPlus (JSLitv (JSString s)) v2 = JSLitv (JSString (s ++ js_v_to_string v2))) /\
+	(js_evaluate_bop JSPlus v1 (JSLitv (JSString s)) = JSLitv (JSString (js_v_to_string v1 ++ s)))`;
 
 val js_evaluate_exp_def = tDefine "js_evaluate_exp" `
 	(js_evaluate_exp st env [] = (st, env, JSRval [])) /\
