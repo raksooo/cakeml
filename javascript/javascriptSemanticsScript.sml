@@ -97,6 +97,18 @@ val js_par_zip_def = Define `
 	(js_par_zip (par::pars, []) = (par, JSUndefined) :: (js_par_zip (pars, []))) /\
 	(js_par_zip (par::pars, arg::args) = (par, arg) :: (js_par_zip (pars, args)))`;
 
+val js_to_boolean = Define `
+	js_to_boolean v =
+		~ (v = JSUndefined
+		\/ v = JSLitv JSNull
+		\/ v = JSLitv (JSBool F)
+		\/ v = JSLitv (JSIntLit 0)
+		\/ v = JSLitv (JSStrLit ""))`;
+
+val js_evaluate_op_def = Define `
+	(js_evaluate_op (JSOpb JSAnd) v1 v2 = if js_to_boolean v1 then v2 else v1) /\
+	(js_evaluate_op (JSOpb JSOr) v1 v2 = if js_to_boolean v1 then v1 else v2)`;
+
 val js_evaluate_exp_def = tDefine "js_evaluate_exp" `
 	(js_evaluate_exp st env [] = (st, env, JSRval [])) /\
   (js_evaluate_exp st env (e1::e2::es) = case fix_clock st (js_evaluate_exp st env [e1]) of
