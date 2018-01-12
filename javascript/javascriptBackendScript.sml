@@ -19,16 +19,16 @@ val apply_if_some_list_def = Define `
 
 val ata_op_def = Define `
 	ata_op op [a; b] =
-		(JSApp (JSFun ["a"; "b"] (JSOp op (JSVar "a") (JSVar "b"))) [a; b])`;
+		(JSApp (JSFun ["a"; "b"] (JSBop op (JSVar "a") (JSVar "b"))) [a; b])`;
 
 val ata_exp_def = Define `
 	(ata_exp (Lannot exp _) = ata_exp exp) /\
 	(ata_exp (Con (SOME (Short "true")) _) = SOME (JSLit (JSBool T))) /\
 	(ata_exp (Con (SOME (Short "false")) _) = SOME (JSLit (JSBool F))) /\
 	(ata_exp (Log And exp1 exp2) = let exps = [ata_exp exp1; ata_exp exp2]
-		in apply_if_some_list (ata_op (JSOpb JSAnd)) exps) /\
+		in apply_if_some_list (ata_op JSAnd) exps) /\
 	(ata_exp (Log Or exp1 exp2) = let exps = [ata_exp exp1; ata_exp exp2]
-		in apply_if_some_list (ata_op (JSOpb JSOr)) exps) /\
+		in apply_if_some_list (ata_op JSOr) exps) /\
 	(ata_exp _ = NONE)`;
 
 val ata_dec_def = Define `

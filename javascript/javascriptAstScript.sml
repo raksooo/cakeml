@@ -11,25 +11,16 @@ val js_lit_def = Hol_datatype `
 		| JSBool of bool
 		| JSNull`;
 
-val js_opn_def = Hol_datatype `
-  js_opn = JSPlus | JSMinus | JSTimes | JSDivide | JSModulo`;
-
-val js_opc_def = Hol_datatype `
-  js_opc = JSLt | JSGt | JSLeq | JSGeq`;
-
-val js_opb_def = Hol_datatype `
-  js_opb = JSAnd | JSOr`;
-
-val js_op_def = Hol_datatype `
-  js_op =
-    | JSOpb of js_opb
-    | JSOpn of js_opn
-    | JSOpc of js_opc`;
+val js_binary_op_def = Hol_datatype `
+  js_binary_op =
+		| JSPlus | JSMinus | JSTimes | JSDivide | JSModulo
+		| JSLt | JSGt | JSLeq | JSGeq
+		| JSAnd | JSOr`;
 
 val js_exp_def = Hol_datatype `
   js_exp =
     | JSLit of js_lit
-    | JSOp of js_op => js_exp => js_exp
+    | JSBop of js_binary_op => js_exp => js_exp
 		| JSVar of js_varN
 		| JSFun of js_varN list => js_exp
 		| JSApp of js_exp => js_exp list`;
