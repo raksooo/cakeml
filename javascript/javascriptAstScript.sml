@@ -22,7 +22,7 @@ val js_exp_def = Hol_datatype `
     | JSLit of js_lit
     | JSBop of js_binary_op => js_exp => js_exp
 		| JSVar of js_varN
-		| JSFun of js_varN list => js_exp
+		| JSAFun of js_varN list => js_exp
 		| JSApp of js_exp => js_exp list`;
 
 val js_stm_def = Hol_datatype `

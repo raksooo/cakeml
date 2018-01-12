@@ -19,7 +19,7 @@ val apply_if_some_list_def = Define `
 
 val ata_op_def = Define `
 	ata_op op [a; b] =
-		(JSApp (JSFun ["a"; "b"] (JSBop op (JSVar "a") (JSVar "b"))) [a; b])`;
+		(JSApp (JSAFun ["a"; "b"] (JSBop op (JSVar "a") (JSVar "b"))) [a; b])`;
 
 val ata_exp_def = Define `
 	(ata_exp (Lannot exp _) = ata_exp exp) /\
