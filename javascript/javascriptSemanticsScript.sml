@@ -136,6 +136,8 @@ val js_evaluate_exp_def = tDefine "js_evaluate_exp" `
 								| NONE => (st', env',
 										JSRerr "SyntaxError: Duplicate parameter name not allowed in this context"))
 			| res => res) /\
+	(js_evaluate_exp st env [JSOp op exp1 exp2] = case js_evaluate_exp st env [exp1; exp2] of
+			| (st', env', JSRval [v1; v2]) => (st', env', JSRval [js_evaluate_op op v1 v2])) /\
 	(js_evaluate_exp st env _ = (st, env, NOT_IMPLEMENTED))`
 	(cheat);
 
