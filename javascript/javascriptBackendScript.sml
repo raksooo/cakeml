@@ -29,6 +29,8 @@ val ata_exp_def = tDefine "ata_exp" `
 	(ata_exp [App Opapp exps] =
 		apply_if_some_list (\jsexps. JSApp (HD jsexps) (TL jsexps)) (ata_exp exps)) /\
 	(ata_exp [Fun par exp] = apply_if_some_list ((JSAFun [par]) o HD) (ata_exp [exp])) /\
+	(ata_exp [Let (SOME name) exp1 exp2] =
+		apply_if_some_list (\es. JSApp (JSAFun ["a"] ((HD o TL) es)) [HD es]) (ata_exp [exp1; exp2])) /\
 	(ata_exp [Log And exp1 exp2] = let exps = ata_exp [exp1; exp2]
 		in apply_if_some_list (ata_op JSAnd) exps) /\
 	(ata_exp [Log Or exp1 exp2] = let exps = ata_exp [exp1; exp2]
