@@ -22,9 +22,13 @@ val ata_exp_def = tDefine "ata_exp" `
 				| NONE => NONE)
 		| NONE => NONE) /\
 	(ata_exp [Lannot exp _] = ata_exp [exp]) /\
+	(ata_exp [Var (Short name)] = SOME [JSVar name]) /\
 	(ata_exp [Con (SOME (Short b)) _] = case b of
 		| "true" => SOME [JSLit (JSBool T)]
 		| "false" => SOME [JSLit (JSBool F)]) /\
+	(ata_exp [App Opapp exps] =
+		apply_if_some_list (\jsexps. JSApp (HD jsexps) (TL jsexps)) (ata_exp exps)) /\
+	(ata_exp [Fun par exp] = apply_if_some_list ((JSAFun [par]) o HD) (ata_exp [exp])) /\
 	(ata_exp [Log And exp1 exp2] = let exps = ata_exp [exp1; exp2]
 		in apply_if_some_list (ata_op JSAnd) exps) /\
 	(ata_exp [Log Or exp1 exp2] = let exps = ata_exp [exp1; exp2]
