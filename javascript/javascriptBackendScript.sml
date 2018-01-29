@@ -14,7 +14,9 @@ val ata_op_def = Define `
 	ata_op op [a; b] =
 		(JSApp (JSAFun ["a"; "b"] (JSBop op (JSVar "a") (JSVar "b"))) [a; b])`;
 
-val ata_exp_def = tDefine "ata_exp" `
+val exp_size_not_zero = Q.prove(`!exp. 0 < exp_size exp`, Cases >> rw [exp_size_def]);
+
+val ata_exp_def = tDefine "ata_exp_def" `
 	(ata_exp [] = SOME []) /\
 	(ata_exp (exp1::exp2::exps) = case ata_exp [exp1] of
 		| SOME [jsexp] => (case ata_exp (exp2 :: exps) of
@@ -36,7 +38,13 @@ val ata_exp_def = tDefine "ata_exp" `
 	(ata_exp [Log Or exp1 exp2] = let exps = ata_exp [exp1; exp2]
 		in apply_if_some_list (ata_op JSOr) exps) /\
 	(ata_exp _ = NONE)`
-	(cheat);
+	((WF_REL_TAC `measure (SUM o MAP exp_size)`)
+		>> rpt strip_tac
+		>> fs [exp_size_def, exp_size_not_zero]
+		>> qspec_then `exp2` assume_tac exp_size_not_zero
+		>> fs []
+		>> Induct_on `exps`
+		>> fs [exp_size_def]);
 
 val ata_dec_def = Define `
 	(ata_dec (Dlet _ Pany exp) = apply_if_some_list (JSExp o HD) (ata_exp [exp])) /\
