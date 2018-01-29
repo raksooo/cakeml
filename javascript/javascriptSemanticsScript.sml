@@ -87,8 +87,9 @@ val js_v_to_string_def = Define `
 
 val js_result_def = Hol_datatype `
  js_result =
-  | JSRval of 'a
-	| JSRerr of 'b
+  | JSRval of js_v list
+	| JSRerr of string
+	| CLOCK_TIMEOUT
 	| NOT_IMPLEMENTED`;
 
 val js_par_zip_def = Define `
