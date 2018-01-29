@@ -5,9 +5,6 @@ open preamble basisSubsetTheory errorHandlingTheory
 
 val _ = new_theory"compiler";
 
-val cakeml_to_javascript_def = Define `
-  cakeml_to_javascript ast = ast_to_ast ast`;
-
 val javascript_ast_to_source_def = Define `
   javascript_ast_to_source ast = "todo"`;
 
@@ -19,7 +16,7 @@ val compile_def = Define `
           case infertype_prog inf_conf (prelude ++ prog) of
             | Failure f => Failure (create_type_error f)
             | Success _ =>
-                case cakeml_to_javascript prog of
+                case ast_to_ast prog of
                   | NONE => Failure CompileError
                   | SOME ast => Success ast`;
 
