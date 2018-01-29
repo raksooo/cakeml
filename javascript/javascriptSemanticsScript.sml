@@ -111,11 +111,25 @@ val js_evaluate_bop_def = Define `
 	(js_evaluate_bop JSPlus (JSLitv (JSString s)) v2 = JSLitv (JSString (s ++ js_v_to_string v2))) /\
 	(js_evaluate_bop JSPlus v1 (JSLitv (JSString s)) = JSLitv (JSString (js_v_to_string v1 ++ s)))`;
 
+val fix_clock_IMP = Q.prove(
+	`fix_clock s x = (s1, res) ==> s1.clock <= s.clock`,
+		Cases_on `x`
+		>> rename1 `fix_clock _ (x, y)`
+		>> Cases_on `y`
+		>> fs [fix_clock_def]
+		>> rw []
+		>> fs []);
+
+val js_exp_size_rel = Q.prove( `!args. SUM (MAP js_exp_size args) < js_exp1_size args + 1`,
+	Induct >> fs [js_exp_size_def]);
+
+val js_exp_size_not_zero = Q.prove(`!exp. 0 < js_exp_size exp`, Cases >> rw [js_exp_size_def]);
+
 val js_evaluate_exp_def = tDefine "js_evaluate_exp" `
 	(js_evaluate_exp st env [] = (st, env, JSRval [])) /\
   (js_evaluate_exp st env (e1::e2::es) = case fix_clock st (js_evaluate_exp st env [e1]) of
 			| (st', env', JSRval v1) => (case js_evaluate_exp st' env' (e2::es) of
-					|	(st'', env'', JSRval vs) => (st'', env'', JSRval (HD v1::vs))
+					|	(st2, env2, JSRval vs) => (st2, env2, JSRval (HD v1::vs))
 					| res => res)
 			| res => res) /\
 	(js_evaluate_exp st env [JSLit lit] = (st, env, JSRval [JSLitv lit])) /\
