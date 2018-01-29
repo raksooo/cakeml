@@ -137,26 +137,61 @@ val js_evaluate_exp_def = tDefine "js_evaluate_exp" `
 	(js_evaluate_exp st env [JSVar name] = case lookup_var env name of
 			| SOME jsvar => (st, env, JSRval [jsvar])
 			| NONE => (st, env, JSRerr ("ReferenceError: " ++ name ++ " is not defined"))) /\
-	(js_evaluate_exp st env [JSApp exp args] = case js_evaluate_exp st env [exp] of
+	(js_evaluate_exp st env [JSApp exp args] = case fix_clock st (js_evaluate_exp st env [exp]) of
 			| (st', env', JSRval [JSLitv lit]) => (st', env',
-					JSEerr ("TypeError: " ++ (js_v_to_string (JSLitv litv)) ++ " is not a function"))
+					JSRerr ("TypeError: " ++ (js_v_to_string (JSLitv lit)) ++ " is not a function"))
 			| (st', env', JSRval [JSUndefined]) => (st', env',
 					JSRerr "TypeError: undefined is not a function")
-			| (st', env', JSRval [JSFunv pars exp']) => case js_evaluate_exp st' env' args of
-					| (st'', env'', JSRval vs) => let
-								env''' = enter_context env'';
+			| (st', env', JSRval [JSFunv pars body]) => (case fix_clock st' (js_evaluate_exp st' env' args) of
+					| (st2, env2, JSRval vs) => let
+								env3 = enter_context env2;
 								parargs = js_par_zip (pars, vs)
-							in (case var_declaration env''' parargs of
-								| SOME env'''' => let (_, _, res) = js_evaluate_exp st'' env'''' [exp]
-										in (st', env', res)
+							in (case var_declaration env3 parargs of
+								| SOME env4 => if st2.clock = 0 then
+											(st2, env4, CLOCK_TIMEOUT)
+										else
+											let (st3, _, res) = js_evaluate_exp (dec_clock st2) env4 [body]
+											in (st3, env2, res)
 								| NONE => (st', env',
 										JSRerr "SyntaxError: Duplicate parameter name not allowed in this context"))
+					| res => res)
 			| res => res) /\
 	(js_evaluate_exp st env [JSBop op exp1 exp2] = case js_evaluate_exp st env [exp1; exp2] of
 			| (st', env', JSRval [v1; v2]) => (st', env', JSRval [js_evaluate_bop op v1 v2])
 			| res => res) /\
 	(js_evaluate_exp st env _ = (st, env, NOT_IMPLEMENTED))`
-	(cheat);
+	(wf_rel_tac`inv_image ($< LEX $<) (λ(st, _, exps). (st.clock, (SUM o MAP js_exp_size) exps))`
+		>> rw[js_exp_size_def, dec_clock_def,LESS_OR_EQ]
+		>> imp_res_tac fix_clock_IMP
+		>> simp[MAP_REVERSE,SUM_REVERSE, js_exp_size_not_zero]
+		>> qspec_then `args` assume_tac js_exp_size_rel
+		>> qspec_then `e2` assume_tac js_exp_size_not_zero
+		>> fs []);
+
+val js_evaluate_stm_def = Define `
+	(js_evaluate_stm st env [] = (st, env, JSRval [])) /\
+	(js_evaluate_stm st env (s1::s2::ss) = case js_evaluate_stm st env [s1] of
+			| (st', env', JSRval v1) => (case js_evaluate_stm st' env' (s2::ss) of
+					| (st2, env2, JSRval vs) => (st2, env2, JSRval (HD v1::vs))
+					| res => res)
+			| res => res) /\
+	(js_evaluate_stm st env [JSExp exp] = js_evaluate_exp st env [exp]) /\
+	(js_evaluate_stm st env [JSLet name exp] = case js_evaluate_exp st env [exp] of
+			| (st', env', JSRval [v]) => (case var_declaration env' [(name, v)] of
+					| SOME env2 => (st', env2, JSRval [JSUndefined])
+					| NONE => (st', env',
+							JSRerr ("SyntaxError: Identifier '" ++ name ++ "' has already been declared")))
+			| res => res) /\
+	(js_evaluate_stm st env _ = (st, env, NOT_IMPLEMENTED))`;
+
+val js_evaluate_prog_def = Define `
+	(js_evaluate_prog st env [] = (st, env, JSRval [])) /\
+	(js_evaluate_prog st env (t1::t2::ts) = case js_evaluate_prog st env [t1] of
+			| (st', env', JSRval v1) => (case js_evaluate_prog st' env' (t2::ts) of
+					| (st2, env2, JSRval vs) => (st2, env2, JSRval (HD v1::vs))
+					| res => res)
+			| res => res) /\
+	(js_evaluate_prog st env [JSStm stm] = js_evaluate_stm st env [stm])`;
 
 val _ = export_theory();
 
