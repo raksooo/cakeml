@@ -58,13 +58,12 @@ val var_assignment_def = Define `
 
 val var_declaration_def = Define `
 	(var_declaration env [] = SOME env) /\
-	(var_declaration env ((name, value)::vs) = let
-			ctxs = env.cl
-		in case INDEX_FIND 0 (\var. FST var = name) (HD ctxs) of
+	(var_declaration env ((name, value)::vs) =
+		case INDEX_FIND 0 (\var. FST var = name) (HD env.cl) of
 			| SOME _ => NONE
 			| NONE => let
-					ctx' = (name, <| value := value; writable := T |>) :: (HD ctxs);
-					env' = env with <| cl := (ctx' :: (TL ctxs)) |>
+					ctx' = (name, <| value := value; writable := T |>) :: (HD env.cl);
+					env' = env with <| cl := (ctx' :: (TL env.cl)) |>
 					in var_declaration env' vs)`;
 
 val lookup_cvar_def = Define `
