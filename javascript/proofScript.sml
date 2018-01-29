@@ -1,15 +1,25 @@
-open preamble semanticsTheory javascriptSemanticsTheory javascriptBackendTheory primSemEnvTheory;
+open preamble compilerTheory evaluateTheory javascriptSemanticsTheory;
 
-val _ = new_theory"proof"
+val _ = new_theory "proof"
 
-val cakeml_semantics_def = Define `
-  cakeml_semantics ffi prog = semantics_init ffi [] prog
-`;
+val js_v_to_cml_v_def = Define `
+	(js_v_to_cml_v (JSLitv (JSInteger n)) = Litv (IntLit n)) /\
+	(js_v_to_cml_v (JSLitv (JSString s)) = Litv (StrLit s))`;
+	(*(js_v_to_cml_v (JSLitv (JSBool b)) = Litv (StrLit n))*)
+
+val js_r_to_cml_r_def = Define `
+	(js_r_to_cml_r (_, _, JSRerr err) = Rerr (Rraise (prim_exn "error"))) /\
+	(js_r_to_cml_r (_, _, JSRval vals) = Rval (MAP js_v_to_cml_v vals))`;
+
+``SND (evaluate_prog (st with <| clock := cl |>) env prog)`` |> type_of;
+``js_r_to_cml_r (js_evaluate_prog <| clock := cl |> base_env js_prog)`` |> type_of;
 
 (*
-`!(ffi:'ffi ffi_state) prog js. compile prog = SOME js
-  ==> cakeml_semantics prog = javascript_semantics js`;
+`!prog js_prog st cl env. (compile_to_javascript prog = Success js_prog)
+  ==> (SND (evaluate_prog (st with <| clock := cl |>) env prog)
+		= js_r_to_cml_r (js_evaluate_prog <| clock := cl |> base_env js_prog))`;
 *)
+
 
 (*
 val compiler_proof = Q.store_thm("compiler_proof",
