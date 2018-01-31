@@ -2,13 +2,13 @@ open preamble javascriptAstTheory ffiTheory listTheory;
 
 val _ = new_theory"javascriptSemantics";
 
-val js_v_def = Hol_datatype `
+val js_v_def = Datatype `
 	js_v =
 		| JSUndefined
-		| JSLitv of js_lit
-		| JSFunv of js_varN list => js_exp`;
+		| JSLitv js_lit
+		| JSFunv (js_varN list) js_exp`;
 
-val state_def = Hol_datatype `state = <| clock : num |>`;
+val state_def = Datatype `state = <| clock : num |>`;
 
 val fix_clock_def = Define `
 	fix_clock st (st', env, res) =
@@ -17,14 +17,14 @@ val fix_clock_def = Define `
 
 val dec_clock_def = Define `dec_clock st = st with <| clock := st.clock - 1 |>`;
 
-val js_var_def = Hol_datatype `
+val js_var_def = Datatype `
 	js_var =
 		<| value : js_v
 		 ; writable : bool |>`;
 
 val js_context_def = type_abbrev("js_context", ``:(js_varN # js_var) list``);
 
-val js_env_def = Hol_datatype `js_env = <| cl : js_context list |>`;
+val js_env_def = Datatype `js_env = <| cl : js_context list |>`;
 
 val base_context_def = Define `
 	base_context = [[("undefined", <| value := JSUndefined; writable := F |>)]]`;
@@ -85,10 +85,10 @@ val js_v_to_string_def = Define `
 		| JSLitv JSNull => "null"
 		| JSFunv _ _ => "function"`;
 
-val js_result_def = Hol_datatype `
+val js_result_def = Datatype `
  js_result =
-  | JSRval of js_v list
-	| JSRerr of string
+  | JSRval (js_v list)
+	| JSRerr string
 	| CLOCK_TIMEOUT
 	| NOT_IMPLEMENTED`;
 
