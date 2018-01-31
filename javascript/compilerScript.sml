@@ -20,6 +20,15 @@ val compile_def = Define `
                   | NONE => Failure CompileError
                   | SOME ast => Success ast`;
 
+val compile_to_cakeml_ast_def = Define `
+  compile_to_cakeml_ast input =
+    case parse_prog (lexer_fun input) of
+      | NONE => Failure ParseError
+      | SOME prog =>
+          case infertype_prog init_config (basisSubset ++ prog) of
+            | Failure f => Failure (create_type_error f)
+            | Success _ => Success prog`;
+
 val compile_to_javascript_def = Define `
   compile_to_javascript input = case compile init_config basisSubset input of
     | Failure error => Failure (error_to_str error)
