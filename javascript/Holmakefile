@@ -1,0 +1,11 @@
+INCLUDES = ../misc ../basis ../basis/pure ../compiler/parsing ../compiler/inference ../semantics ../semantics/ffi ../semantics/proofs/ ../translator
+
+CLINE_OPTIONS = --qof
+
+THYFILES = $(patsubst %Script.sml,%Theory.uo,$(wildcard *.sml))
+TARGETS = $(patsubst %.sml,%.uo,$(THYFILES))
+
+all: $(TARGETS)
+
+.PHONY: all
+
