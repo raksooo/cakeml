@@ -15,12 +15,12 @@ val lit_toString_def = Define `
 	(lit_toString (JSNull) = "null")`;
 
 val bop_toString_def = Define `
-	(bop_toString JSAnd a b = a ++ "&&" ++ b) /\
-	(bop_toString JSOr a b = a ++ "&&" ++ b)`;
+	(bop_toString JSAnd a b = a ++ " && " ++ b) /\
+	(bop_toString JSOr a b = a ++ " || " ++ b)`;
 
 val exp_toString_def = tDefine "exp_toString" `
 	(exp_toString (JSLit lit) = lit_toString lit) /\
-	(exp_toString (JSAFun pars exp) = "((" ++ join pars ++ ") => {" ++ exp_toString exp ++ "})") /\
+	(exp_toString (JSAFun pars exp) = "((" ++ join pars ++ ") => " ++ exp_toString exp ++ ")") /\
 	(exp_toString (JSVar name) = name) /\
 	(exp_toString (JSApp exp args) = let
 				exp' = exp_toString exp;

@@ -106,8 +106,6 @@ val js_to_boolean = Define `
 		\/ v = JSLitv (JSString ""))`;
 
 val js_evaluate_bop_def = Define `
-	(js_evaluate_bop JSAnd v1 v2 = if js_to_boolean v1 then v2 else v1) /\
-	(js_evaluate_bop JSOr v1 v2 = if js_to_boolean v1 then v1 else v2) /\
 	(js_evaluate_bop JSPlus (JSLitv (JSString s)) v2 = JSLitv (JSString (s ++ js_v_to_string v2))) /\
 	(js_evaluate_bop JSPlus v1 (JSLitv (JSString s)) = JSLitv (JSString (js_v_to_string v1 ++ s)))`;
 
@@ -156,6 +154,18 @@ val js_evaluate_exp_def = tDefine "js_evaluate_exp" `
 										JSRerr "SyntaxError: Duplicate parameter name not allowed in this context"))
 					| res => res)
 			| res => res) /\
+	(js_evaluate_exp st env [JSBop JSAnd exp1 exp2] =
+			case fix_clock st (js_evaluate_exp st env [exp1]) of
+				| (st', env', JSRval [v1]) => if js_to_boolean v1
+							then js_evaluate_exp st' env' [exp2]
+							else (st', env', JSRval [v1])
+				| res => res) /\
+	(js_evaluate_exp st env [JSBop JSOr exp1 exp2] =
+			case fix_clock st (js_evaluate_exp st env [exp1]) of
+				| (st', env', JSRval [v1]) => if js_to_boolean v1
+							then (st', env', JSRval [v1])
+							else js_evaluate_exp st' env' [exp2]
+				| res => res) /\
 	(js_evaluate_exp st env [JSBop op exp1 exp2] = case js_evaluate_exp st env [exp1; exp2] of
 			| (st', env', JSRval [v1; v2]) => (st', env', JSRval [js_evaluate_bop op v1 v2])
 			| res => res) /\

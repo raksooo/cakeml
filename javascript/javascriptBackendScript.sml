@@ -11,8 +11,7 @@ val apply_if_some_list_def = Define `
 	(apply_if_some_list f (SOME v) = SOME [f v])`;
 
 val ata_op_def = Define `
-	ata_op op [a; b] =
-		(JSApp (JSAFun ["a"; "b"] (JSBop op (JSVar "a") (JSVar "b"))) [a; b])`;
+	ata_op op [a; b] = JSBop op a b`;
 
 val exp_size_not_zero = Q.prove(`!exp. 0 < exp_size exp`, Cases >> rw [exp_size_def]);
 
