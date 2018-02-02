@@ -1,15 +1,8 @@
+(*
 open preamble compilerTheory evaluateTheory javascriptSemanticsTheory;
 
 val _ = new_theory "proof"
 
-val js_v_to_cml_v_def = Define `
-	(js_v_to_cml_v (JSLitv (JSInteger n)) = Litv (IntLit n)) /\
-	(js_v_to_cml_v (JSLitv (JSString s)) = Litv (StrLit s))`;
-	(*(js_v_to_cml_v (JSLitv (JSBool b)) = Litv (StrLit n))*)
-
-val js_r_to_cml_r_def = Define `
-	(js_r_to_cml_r (_, _, JSRerr err) = Rerr (Rraise (prim_exn "error"))) /\
-	(js_r_to_cml_r (_, _, JSRval vals) = Rval (MAP js_v_to_cml_v vals))`;
 
 ``SND (evaluate_prog (st with <| clock := cl |>) env prog)`` |> type_of;
 ``js_r_to_cml_r (js_evaluate_prog <| clock := cl |> base_env js_prog)`` |> type_of;
@@ -36,3 +29,4 @@ val compiler_proof = Q.store_thm("compiler_proof",
 *)
 
 val _ = export_theory()
+*)

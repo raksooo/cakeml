@@ -1,7 +1,8 @@
 open preamble basisSubsetTheory errorHandlingTheory
      lexer_funTheory lexer_implTheory
      cmlParseTheory inferTheory
-		 javascriptBackendTheory;
+		 javascriptBackendTheory
+		 prettyPrintTheory;
 
 val _ = new_theory"compiler";
 
@@ -33,6 +34,11 @@ val compile_to_javascript_def = Define `
   compile_to_javascript input = case compile init_config basisSubset input of
     | Failure error => Failure (error_to_str error)
     | Success ast => Success ast`;
+
+val compile_and_print_def = Define `
+  compile_and_print input = case compile init_config basisSubset input of
+    | Failure error => Failure (error_to_str error)
+    | Success ast => Success (prog_toString ast)`;
 
 (*
 val compile_and_compare_def = Define `
