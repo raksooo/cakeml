@@ -56,15 +56,11 @@ val ata_dec_def = Define `
 			in apply_if_some (MAP (\(name, par, exp). JSLet name (JSAFun [par] exp))) replaced) /\
 	(ata_dec _ = NONE)`;
 
-val ata_top_def = Define `
-	(ata_top (Tdec dec) = apply_if_some (MAP JSStm) (ata_dec dec)) /\
-	(ata_top _ = NONE)`;
-
 val ast_to_ast_def = Define `
 	(ast_to_ast [] = SOME []) /\
-	(ast_to_ast (top::tops) = case ata_top top of
-		| SOME top' => (case ast_to_ast tops of
-				| SOME tops' => SOME (top' ++ tops')
+	(ast_to_ast (dec::decs) = case ata_dec dec of
+		| SOME dec' => (case ast_to_ast decs of
+				| SOME decs' => SOME (dec' ++ decs')
 				| NONE => NONE)
 		| NONE => NONE)`;
 

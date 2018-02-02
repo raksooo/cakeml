@@ -185,13 +185,7 @@ val js_evaluate_stm_def = Define `
 	(js_evaluate_stm st env _ = (st, env, NOT_IMPLEMENTED))`;
 
 val js_evaluate_prog_def = Define `
-	(js_evaluate_prog st env [] = (st, env, JSRval [])) /\
-	(js_evaluate_prog st env (t1::t2::ts) = case js_evaluate_prog st env [t1] of
-			| (st', env', JSRval v1) => (case js_evaluate_prog st' env' (t2::ts) of
-					| (st2, env2, JSRval vs) => (st2, env2, JSRval (HD v1::vs))
-					| res => res)
-			| res => res) /\
-	(js_evaluate_prog st env [JSStm stm] = js_evaluate_stm st env [stm])`;
+  js_evaluate_prog st env prog = js_evaluate_stm st env prog`;
 
 val _ = export_theory();
 

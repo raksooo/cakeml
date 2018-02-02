@@ -36,7 +36,7 @@ val stm_toString_def = Define `
 
 val prog_toString = Define `
 	(prog_toString [] = "") /\
-	(prog_toString ((JSStm stm)::ts) = stm_toString stm ++ prog_toString ts)`;
+	(prog_toString (stm::stms) = stm_toString stm ++ prog_toString stms)`;
 
 val _ = export_theory();
 

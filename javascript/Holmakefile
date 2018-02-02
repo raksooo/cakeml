@@ -1,4 +1,4 @@
-INCLUDES = ../misc ../basis ../basis/pure ../compiler/parsing ../compiler/inference ../semantics ../semantics/ffi ../semantics/proofs/ ../translator
+INCLUDES = ../misc ../basis/pure ../compiler/parsing ../semantics ../semantics/ffi ../semantics/proofs
 
 CLINE_OPTIONS = --qof
 

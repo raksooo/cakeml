@@ -30,11 +30,7 @@ val js_stm_def = Datatype `
 		| JSLet js_varN js_exp
 		| JSExp js_exp`;
 
-val js_top_def = Datatype `
-	js_top =
-		| JSStm js_stm`;
-
-val _ = type_abbrev( "js_prog" , ``: js_top list``);
+val _ = type_abbrev( "js_prog" , ``: js_stm list``);
 
 val _ = export_theory()
 
