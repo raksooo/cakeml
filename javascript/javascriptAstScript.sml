@@ -23,6 +23,7 @@ val js_exp_def = Datatype `
     | JSBop js_binary_op js_exp js_exp
 		| JSVar js_varN
 		| JSAFun (js_varN list) js_exp
+		| JSFun js_varN (js_varN list) js_exp
 		| JSApp js_exp (js_exp list)`;
 
 val js_stm_def = Datatype `
