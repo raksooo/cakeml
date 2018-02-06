@@ -198,8 +198,8 @@ val js_evaluate_exp_def = tDefine "js_evaluate_exp" `
                   env3 = add_to_top_scope (merge_envs cenv' env2) parargs
                 in if st2.clock = 0 then (st2, env2, CLOCK_TIMEOUT)
                   else
-                    let (st3, _, res) = js_evaluate_exp (dec_clock st2) env3 [body]
-                    in (st3, env2, res)
+                    let (st3, env4, res) = js_evaluate_exp (dec_clock st2) env3 [body]
+                    in (st3, leave_scope env4, res)
             | res => res)
 			| (st', env', JSRval [JSLitv lit]) => (st', env',
 					JSRerr ("TypeError: " ++ (js_v_to_string (JSLitv lit)) ++ " is not a function"))
