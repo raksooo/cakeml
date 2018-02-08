@@ -15,7 +15,7 @@ val ata_op_def = Define `
 
 val exp_size_not_zero = Q.prove(`!exp. 0 < exp_size exp`, Cases >> rw [exp_size_def]);
 
-val ata_exp_def = tDefine "ata_exp_def" `
+val ata_exp_def = tDefine "ata_exp" `
 	(ata_exp [] = SOME []) /\
 	(ata_exp (exp1::exp2::exps) = case ata_exp [exp1] of
 		| SOME [jsexp] => (case ata_exp (exp2 :: exps) of
@@ -44,6 +44,8 @@ val ata_exp_def = tDefine "ata_exp_def" `
 		>> fs []
 		>> Induct_on `exps`
 		>> fs [exp_size_def]);
+
+val ata_exp_ind = fetch "-" "ata_exp_ind";
 
 val ata_dec_def = Define `
 	(ata_dec (Dlet _ Pany exp) = apply_if_some_list (JSExp o HD) (ata_exp [exp])) /\
