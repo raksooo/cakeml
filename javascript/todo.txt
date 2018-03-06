@@ -1,0 +1,9 @@
+Heltal
+Patternmatching
+Listor
+Datatyper
+Referenser
+Något på declaration-level
+
+ffi
+Exceptions
