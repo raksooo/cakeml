@@ -1,4 +1,4 @@
-open preamble lexer_funTheory lexer_implTheory cmlParseTheory
+open preamble basis lexer_funTheory lexer_implTheory cmlParseTheory
 		 javascriptBackendTheory prettyPrintTheory
 		 mlstringTheory;
 
