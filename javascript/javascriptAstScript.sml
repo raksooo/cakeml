@@ -29,6 +29,7 @@ val js_exp_def = Datatype `
 val js_stm_def = Datatype `
 	js_stm =
 		| JSLet js_varN js_exp
+		| JSVar js_varN js_exp
 		| JSExp js_exp`;
 
 val _ = type_abbrev( "js_prog" , ``: js_stm list``);

@@ -29,8 +29,8 @@ val exp_toString_def = tDefine "exp_toString" `
 				exp' = exp_toString exp;
 				args' = MAP exp_toString args
 			in exp' ++ "(" ++ join args' ++ ")") /\
-	(exp_toString (JSBop op exp1 exp2) = bop_toString op
-				(exp_toString exp1) (exp_toString exp2))`
+	(exp_toString (JSBop op exp1 exp2) = "(" ++ bop_toString op
+				(exp_toString exp1) (exp_toString exp2) ++ ")")`
 	(cheat);
 
 val stm_toString_def = Define `
