@@ -1,8 +1,9 @@
-Heltal
-Patternmatching
-Listor
-Datatyper
+  Heltal
+  Listor
+  Letrec
 Referenser
+Datatyper
+Patternmatching
 Något på declaration-level
 
 ffi

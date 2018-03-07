@@ -100,7 +100,7 @@ val merge_envs_def = Define `
 val js_v_to_string_def = Define `
 	js_v_to_string v = case v of
 		| JSUndefined => "undefined"
-    | JSLitv (JSInteger n) => toString n
+    | JSLitv (JSBigInt n) => toString n
     | JSLitv (JSString str) => str
 		| JSLitv (JSBool T) => "true"
 		| JSLitv (JSBool F) => "false"
@@ -123,7 +123,7 @@ val is_truthy_def = Define `
 		~ (v = JSUndefined
 		\/ v = JSLitv JSNull
 		\/ v = JSLitv (JSBool F)
-		\/ v = JSLitv (JSInteger 0)
+		\/ v = JSLitv (JSBigInt 0)
 		\/ v = JSLitv (JSString ""))`;
 
 val js_evaluate_bop_def = Define `

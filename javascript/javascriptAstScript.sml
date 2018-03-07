@@ -6,15 +6,16 @@ val js_varN_def = type_abbrev("js_varN", ``:string``);
 
 val js_lit_def = Datatype `
   js_lit =
-    | JSInteger int
+    | JSBigInt int
     | JSString string
 		| JSBool bool
+		| JSArray (js_lit list)
 		| JSNull`;
 
 val js_binary_op_def = Datatype `
   js_binary_op =
 		| JSPlus | JSMinus | JSTimes | JSDivide | JSModulo
-		| JSLt | JSGt | JSLeq | JSGeq
+		| JSLt | JSGt | JSLeq | JSGeq | JSEq | JSNeq
 		| JSAnd | JSOr`;
 
 val js_exp_def = Datatype `
@@ -29,7 +30,7 @@ val js_exp_def = Datatype `
 val js_stm_def = Datatype `
 	js_stm =
 		| JSLet js_varN js_exp
-		| JSVar js_varN js_exp
+		| JSVarDecl js_varN js_exp
 		| JSExp js_exp`;
 
 val _ = type_abbrev( "js_prog" , ``: js_stm list``);
