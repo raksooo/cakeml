@@ -19,6 +19,7 @@ val js_binary_op_def = Datatype `
 
 val js_exp_def = Datatype `
   js_exp =
+		| JSComma (js_exp list)
     | JSLit js_lit
 		| JSArray (js_exp list)
 		| JSObjectCreate ((js_varN, js_exp) alist)
@@ -26,10 +27,10 @@ val js_exp_def = Datatype `
 		| JSObjectRetrieve js_exp js_varN
     | JSBop js_binary_op js_exp js_exp
 		| JSVar js_varN
-		| JSAFun (js_varN list) (js_exp list)
-		| JSFun js_varN (js_varN list) (js_exp list)
+		| JSAFun (js_varN list) js_exp
+		| JSFun js_varN (js_varN list) js_exp
 		| JSApp js_exp (js_exp list)
-		| JSTernary js_exp js_exp js_exp`;
+		| JSConditional js_exp js_exp js_exp`;
 
 val js_stm_def = Datatype `
 	js_stm =
