@@ -4,6 +4,7 @@
   Referenser
   Tuples
   Assignment return undefined
+  if else
 Datatyper
 Likhet/Olikhet
 Patternmatching

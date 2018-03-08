@@ -60,6 +60,9 @@ val ata_exp_def = tDefine "ata_exp" `
 	(ata_exp [Lit lit] = SOME [JSLit (ata_lit lit)]) /\
 	(ata_exp [Var (Short name)] = SOME [ata_var name]) /\
 	(ata_exp [Con id exps] = OPTION_BIND (ata_exp exps) (ata_con id)) /\
+	(ata_exp [If condition ifexp elseexp] = OPTION_MAP
+			(\l. [JSTernary (EL 0 l) (EL 1 l) (EL 2 l)])
+			(ata_exp [condition; ifexp; elseexp])) /\
 
   (ata_exp [App Opapp exps] = OPTION_MAP (\l. [JSApp (HD l) (TL l)]) (ata_exp exps)) /\
 	(ata_exp [Fun par exp] = OPTION_MAP (toList o (JSAFun [addVarPrefix par])) (ata_exp [exp])) /\

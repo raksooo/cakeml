@@ -28,7 +28,8 @@ val js_exp_def = Datatype `
 		| JSVar js_varN
 		| JSAFun (js_varN list) (js_exp list)
 		| JSFun js_varN (js_varN list) (js_exp list)
-		| JSApp js_exp (js_exp list)`;
+		| JSApp js_exp (js_exp list)
+		| JSTernary js_exp js_exp js_exp`;
 
 val js_stm_def = Datatype `
 	js_stm =

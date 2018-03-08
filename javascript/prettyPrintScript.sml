@@ -34,6 +34,8 @@ val exp_toString_def = tDefine "exp_toString" `
 	(exp_toString (JSFun name pars exps) =
       "(function " ++ name ++ "(" ++ join pars ++ ") { return (" ++ join (MAP exp_toString exps) ++ ") })") /\
 	(exp_toString (JSVar name) = name) /\
+	(exp_toString (JSTernary condition ifexp elseexp) = "(" ++ exp_toString condition ++
+			" ? " ++ exp_toString ifexp ++ " : " ++ exp_toString elseexp ++ ")") /\
 	(exp_toString (JSApp exp args) = let
 				exp' = exp_toString exp;
 				args' = MAP exp_toString args
