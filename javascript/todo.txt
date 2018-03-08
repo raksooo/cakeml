@@ -1,7 +1,8 @@
   Heltal
   Listor
   Letrec
-Referenser
+  Referenser
+Tuples
 Datatyper
 Patternmatching
 Något på declaration-level

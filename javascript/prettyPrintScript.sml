@@ -7,14 +7,12 @@ val join_def = Define `
 	(join (s::[]) = s) /\
 	(join (s::ss) = s ++ "," ++ join ss)`;
 
-val lit_toString_def = tDefine "lit_to_string" `
+val lit_toString_def = Define `
 	(lit_toString (JSBigInt n) = "bigInt(" ++ toString n ++ ")") /\
 	(lit_toString (JSString s) = s) /\
 	(lit_toString (JSBool T) = "true") /\
 	(lit_toString (JSBool F) = "false") /\
-	(lit_toString (JSNull) = "null") /\
-	(lit_toString (JSArray lits) = "[" ++ join (MAP lit_toString lits) ++ "]")`
-	cheat;
+	(lit_toString (JSNull) = "null")`;
 
 val bop_toString_def = Define `
 	(bop_toString JSPlus a b = a ++ ".add(" ++ b ++ ")") /\
@@ -30,6 +28,7 @@ val bop_toString_def = Define `
 
 val exp_toString_def = tDefine "exp_toString" `
 	(exp_toString (JSLit lit) = lit_toString lit) /\
+	(exp_toString (JSArray exps) = "[" ++ join (MAP exp_toString exps) ++ "]") /\
 	(exp_toString (JSAFun pars exp) =
       "(function(" ++ join pars ++ ") { return " ++ exp_toString exp ++ " })") /\
 	(exp_toString (JSFun name pars exp) =
@@ -39,6 +38,11 @@ val exp_toString_def = tDefine "exp_toString" `
 				exp' = exp_toString exp;
 				args' = MAP exp_toString args
 			in exp' ++ "(" ++ join args' ++ ")") /\
+	(exp_toString (JSObjectCreate decls) = "({" ++ join
+			(MAP (\(p, exp). p ++ ": " ++ exp_toString exp) decls) ++ "})") /\
+	(exp_toString (JSObjectRetrieve exp prop) = exp_toString exp ++ "." ++ prop) /\
+	(exp_toString (JSObjectAssign exp1 prop exp2) =
+			exp_toString exp1 ++ "." ++ prop ++ " = " ++ exp_toString exp2) /\
 	(exp_toString (JSBop op exp1 exp2) = "(" ++ bop_toString op
 				(exp_toString exp1) (exp_toString exp2) ++ ")")`
 	(cheat);

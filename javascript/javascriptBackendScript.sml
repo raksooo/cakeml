@@ -4,6 +4,8 @@ val _ = new_theory"javascriptBackend";
 
 val toList_def = Define `toList h = [h]`;
 
+val UNDEFINED_def = Define `UNDEFINED = JSVar "undefined"`;
+
 val sequenceOption_def = Define `
   sequenceOption l = FOLDL (OPTION_MAP2 (\l' v. l' ++ [v])) (SOME []) l`;
 
@@ -21,7 +23,33 @@ val ata_op_def = Define `
 	ata_op op [a; b] = JSBop op a b`;
 
 val ata_list_def = Define `
-	ata_list [JSLit lit; JSLit (JSArray lits)] = JSLit (JSArray (lit :: lits))`;
+	ata_list [lit; JSArray exps] = JSArray (lit :: exps)`;
+
+val ata_var'_def = Define `
+	ata_var' op = JSAFun [addVarPrefix "a"]
+		(JSAFun [addVarPrefix "b"]
+			(JSBop op (JSVar (addVarPrefix "a")) (JSVar (addVarPrefix "b"))))`;
+
+val ata_var_def = Define `
+	(ata_var "+" = ata_var' JSPlus) /\
+	(ata_var "-" = ata_var' JSMinus) /\
+	(ata_var "*" = ata_var' JSTimes) /\
+	(ata_var "/" = ata_var' JSDivide) /\
+	(ata_var "<" = ata_var' JSLt) /\
+	(ata_var "<=" = ata_var' JSLeq) /\
+	(ata_var ">" = ata_var' JSGt) /\
+	(ata_var ">=" = ata_var' JSGeq) /\
+	(ata_var "!" = JSAFun [addVarPrefix "a"] (JSObjectRetrieve (JSVar (addVarPrefix "a")) "v")) /\
+	(ata_var ":=" = JSAFun [addVarPrefix "a"] (JSAFun [addVarPrefix "b"]
+			(JSObjectAssign (JSVar (addVarPrefix "a")) "v" (JSVar (addVarPrefix "b"))))) /\
+	(ata_var name = JSVar (addVarPrefix name))`;
+
+val ata_con_def = Define `
+	(ata_con (SOME (Short "true")) _ = SOME [JSLit (JSBool T)]) /\
+	(ata_con (SOME (Short "false")) _ = SOME [JSLit (JSBool F)]) /\
+	(ata_con (SOME (Short "nil")) _ = SOME [JSArray []]) /\
+	(ata_con (SOME (Short "::")) exps = SOME [ata_list exps]) /\
+	(ata_con NONE _ = NONE)`;
 
 val ata_exp_def = tDefine "ata_exp" `
 	(ata_exp [] = SOME []) /\
@@ -29,33 +57,13 @@ val ata_exp_def = tDefine "ata_exp" `
 		(exp1::exp2::exps)) /\
 	(ata_exp [Lannot exp _] = ata_exp [exp]) /\
 	(ata_exp [Lit lit] = SOME [JSLit (ata_lit lit)]) /\
-	(ata_exp [Var (Short name)] = SOME [JSVar (addVarPrefix name)]) /\
-
-	(ata_exp [Con (SOME (Short short)) exps] =
-		if short = "true" then SOME [JSLit (JSBool T)]
-		else if short = "false" then SOME [JSLit (JSBool F)]
-		else if short = "nil" then SOME [JSLit (JSArray [])]
-		else if short = "::" then OPTION_MAP (toList o ata_list) (ata_exp exps)
-		else NONE) /\
-
-  (ata_exp [App Opapp [App Opapp [Var (Short op); exp1]; exp2]] =
-		let f = (\g. OPTION_MAP (toList o ata_op g) (ata_exp [exp1; exp2]))
-		in if op = "+" then f JSPlus
-			else if op = "-" then f JSMinus
-			else if op = "*" then f JSTimes
-			else if op = "/" then f JSDivide
-			else if op = "<" then f JSLt
-			else if op = "<=" then f JSLeq
-			else if op = ">" then f JSGt
-			else if op = ">=" then f JSGeq
-			else if op = "=" then f JSEq (* TODO: Can't compare bigints *)
-			else if op = "<>" then f JSNeq
-			else let
-					exps = ata_exp [App Opapp [Var (Short op); exp1]; exp2]
-				in OPTION_MAP (\l. [JSApp (HD l) (TL l)]) exps) /\
+	(ata_exp [Var (Short name)] = SOME [ata_var name]) /\
+	(ata_exp [Con id exps] = OPTION_BIND (ata_exp exps) (ata_con id)) /\
 
   (ata_exp [App Opapp exps] = OPTION_MAP (\l. [JSApp (HD l) (TL l)]) (ata_exp exps)) /\
 	(ata_exp [Fun par exp] = OPTION_MAP (toList o (JSAFun [addVarPrefix par]) o HD) (ata_exp [exp])) /\
+	
+	(ata_exp [App Opref exps] = OPTION_MAP (\l. [JSObjectCreate [("v", (HD l))]]) (ata_exp exps)) /\
 
   (ata_exp [Let (SOME name) exp1 exp2] =
     OPTION_MAP (\es. [JSApp (JSAFun [addVarPrefix name] (LAST es)) [HD es]]) (ata_exp [exp1; exp2])) /\

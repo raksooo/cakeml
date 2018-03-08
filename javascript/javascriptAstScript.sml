@@ -9,7 +9,6 @@ val js_lit_def = Datatype `
     | JSBigInt int
     | JSString string
 		| JSBool bool
-		| JSArray (js_lit list)
 		| JSNull`;
 
 val js_binary_op_def = Datatype `
@@ -21,6 +20,10 @@ val js_binary_op_def = Datatype `
 val js_exp_def = Datatype `
   js_exp =
     | JSLit js_lit
+		| JSArray (js_exp list)
+		| JSObjectCreate ((js_varN, js_exp) alist)
+		| JSObjectAssign js_exp js_varN js_exp
+		| JSObjectRetrieve js_exp js_varN
     | JSBop js_binary_op js_exp js_exp
 		| JSVar js_varN
 		| JSAFun (js_varN list) js_exp
