@@ -9,7 +9,7 @@ val join_def = Define `
 
 val lit_toString_def = Define `
 	(lit_toString (JSBigInt n) = "bigInt(" ++ toString n ++ ")") /\
-	(lit_toString (JSString s) = s) /\
+	(lit_toString (JSString s) = "'" ++ s ++ "'" ) /\
 	(lit_toString (JSBool T) = "true") /\
 	(lit_toString (JSBool F) = "false") /\
 	(lit_toString (JSNull) = "null")`;
@@ -29,10 +29,10 @@ val bop_toString_def = Define `
 val exp_toString_def = tDefine "exp_toString" `
 	(exp_toString (JSLit lit) = lit_toString lit) /\
 	(exp_toString (JSArray exps) = "[" ++ join (MAP exp_toString exps) ++ "]") /\
-	(exp_toString (JSAFun pars exp) =
-      "(function(" ++ join pars ++ ") { return " ++ exp_toString exp ++ " })") /\
-	(exp_toString (JSFun name pars exp) =
-      "(function " ++ name ++ "(" ++ join pars ++ ") { return " ++ exp_toString exp ++ " })") /\
+	(exp_toString (JSAFun pars exps) =
+      "(function(" ++ join pars ++ ") { return (" ++ join (MAP exp_toString exps) ++ ") })") /\
+	(exp_toString (JSFun name pars exps) =
+      "(function " ++ name ++ "(" ++ join pars ++ ") { return (" ++ join (MAP exp_toString exps) ++ ") })") /\
 	(exp_toString (JSVar name) = name) /\
 	(exp_toString (JSApp exp args) = let
 				exp' = exp_toString exp;

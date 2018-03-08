@@ -2,8 +2,10 @@
   Listor
   Letrec
   Referenser
-Tuples
+  Tuples
+  Assignment return undefined
 Datatyper
+Likhet/Olikhet
 Patternmatching
 Något på declaration-level
 
