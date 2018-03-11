@@ -30,7 +30,9 @@ val js_exp_def = Datatype `
 		| JSAFun (js_varN list) js_exp
 		| JSFun js_varN (js_varN list) js_exp
 		| JSApp js_exp (js_exp list)
-		| JSConditional js_exp js_exp js_exp`;
+		| JSConditional js_exp js_exp js_exp
+		| JSClass js_varN (js_varN option) ((js_varN # (js_varN list) # js_exp) list)
+		| JSNew js_exp (js_exp list)`;
 
 val js_stm_def = Datatype `
 	js_stm =
@@ -38,7 +40,7 @@ val js_stm_def = Datatype `
 		| JSVarDecl js_varN js_exp
 		| JSExp js_exp`;
 
-val _ = type_abbrev( "js_prog" , ``: js_stm list``);
+val _ = type_abbrev("js_prog", ``: js_stm list``);
 
 val _ = export_theory()
 

@@ -12,6 +12,9 @@ val sequenceOption_def = Define `
 val addVarPrefix_def = Define `
 	addVarPrefix name = "cml_" ++ name`;
 
+val addGenPrefix_def = Define `
+	addGenPrefix name = "cmlg_" ++ name`;
+
 val exp_size_not_zero = Q.prove(`!exp. 0 < exp_size exp`, Cases >> rw [exp_size_def]);
 
 val ata_lit_def = Define `
@@ -26,9 +29,9 @@ val ata_list_def = Define `
 	ata_list [lit; JSArray exps] = JSArray (lit :: exps)`;
 
 val ata_var'_def = Define `
-	ata_var' op = JSAFun [addVarPrefix "a"]
-		(JSAFun [addVarPrefix "b"]
-			(JSBop op (JSVar (addVarPrefix "a")) (JSVar (addVarPrefix "b"))))`;
+	ata_var' op = JSAFun [addGenPrefix "a"]
+		(JSAFun [addGenPrefix "b"]
+			(JSBop op (JSVar (addGenPrefix "a")) (JSVar (addGenPrefix "b"))))`;
 
 val ata_var_def = Define `
 	(ata_var "+" = ata_var' JSPlus) /\
@@ -39,9 +42,9 @@ val ata_var_def = Define `
 	(ata_var "<=" = ata_var' JSLeq) /\
 	(ata_var ">" = ata_var' JSGt) /\
 	(ata_var ">=" = ata_var' JSGeq) /\
-	(ata_var "!" = JSAFun [addVarPrefix "a"] (JSObjectRetrieve (JSVar (addVarPrefix "a")) "v")) /\
-	(ata_var ":=" = JSAFun [addVarPrefix "a"] (JSAFun [addVarPrefix "b"]
-			(JSComma [JSObjectAssign (JSVar (addVarPrefix "a")) "v" (JSVar (addVarPrefix "b"));
+	(ata_var "!" = JSAFun [addGenPrefix "a"] (JSObjectRetrieve (JSVar (addGenPrefix "a")) (addGenPrefix "v"))) /\
+	(ata_var ":=" = JSAFun [addGenPrefix "a"] (JSAFun [addGenPrefix "b"]
+			(JSComma [JSObjectAssign (JSVar (addGenPrefix "a")) (addGenPrefix "v") (JSVar (addGenPrefix "b"));
 				UNDEFINED]))) /\
 	(ata_var name = JSVar (addVarPrefix name))`;
 
@@ -50,8 +53,8 @@ val ata_con_def = Define `
 	(ata_con (SOME (Short "false")) _ = SOME [JSLit (JSBool F)]) /\
 	(ata_con (SOME (Short "nil")) _ = SOME [JSArray []]) /\
 	(ata_con (SOME (Short "::")) exps = SOME [ata_list exps]) /\
-	(ata_con NONE exps = SOME [JSArray exps]) /\
-	(ata_con _ _ = NONE)`;
+	(ata_con NONE exps = SOME [JSObjectCreate [(addGenPrefix "tuple", JSArray exps)]]) /\
+	(ata_con (SOME (Short t)) exps = SOME [JSNew (JSVar t) exps])`;
 
 val ata_exp_def = tDefine "ata_exp" `
 	(ata_exp [] = SOME []) /\
@@ -68,7 +71,7 @@ val ata_exp_def = tDefine "ata_exp" `
   (ata_exp [App Opapp exps] = OPTION_MAP (\l. [JSApp (HD l) (TL l)]) (ata_exp exps)) /\
 	(ata_exp [Fun par exp] = OPTION_MAP (toList o (JSAFun [addVarPrefix par]) o HD) (ata_exp [exp])) /\
 	
-	(ata_exp [App Opref exps] = OPTION_MAP (\l. [JSObjectCreate [("v", (HD l))]]) (ata_exp exps)) /\
+	(ata_exp [App Opref exps] = OPTION_MAP (\l. [JSObjectCreate [(addGenPrefix "v", (HD l))]]) (ata_exp exps)) /\
 
   (ata_exp [Let (SOME name) exp1 exp2] =
     OPTION_MAP (\es. [JSApp (JSAFun [addVarPrefix name] (LAST es)) [HD es]]) (ata_exp [exp1; exp2])) /\
@@ -112,6 +115,15 @@ val ata_exp_length_proof = Q.store_thm("ata_exp_length_proof",
 		>> fs [ata_exp_def, toList_def, ata_con_def]
 		>> cheat);
 
+val type_class_def_def = Define `
+	type_class_def extends name = let constructor = ("constructor", [addGenPrefix "fields"],
+				(JSObjectAssign (JSVar "this") (addGenPrefix "fields") (JSVar (addGenPrefix "fields"))))
+		in JSExp (JSClass name extends (if IS_NONE extends then [constructor] else []))`;
+
+val ata_type_def_def = Define `
+	ata_type_def (_, name, fields) = type_class_def NONE name ::
+		MAP (type_class_def (SOME name) o FST) fields`;
+
 val ata_dec_def = Define `
 	(ata_dec (Dlet _ Pany exp) = OPTION_MAP (toList o JSExp o HD) (ata_exp [exp])) /\
 	(ata_dec (Dlet _ (Pvar name) exp) =
@@ -123,6 +135,7 @@ val ata_dec_def = Define `
 			in OPTION_MAP (MAP
 				(\(name, par, exp). JSVarDecl (addVarPrefix name) (JSAFun [addVarPrefix par] exp)))
 				replaced) /\
+	(ata_dec (Dtype _ type_defs) = SOME (FLAT (MAP ata_type_def type_defs))) /\
 	(ata_dec _ = NONE)`;
 
 val ata_top_def = Define `

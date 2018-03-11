@@ -1,3 +1,4 @@
+(*
 open preamble javascriptAstTheory ffiTheory listTheory alistTheory;
 
 val _ = new_theory"javascriptSemantics";
@@ -261,4 +262,5 @@ val js_evaluate_prog_def = Define `
   js_evaluate_prog st env prog = js_evaluate_stm st env prog`;
 
 val _ = export_theory();
+*)
 

@@ -5,10 +5,11 @@
   Tuples
   Assignment return undefined
   if else
-Datatyper
+  Datatyper
 Likhet/Olikhet
 Patternmatching
-Något på declaration-level
+
+Semantik för deconstruction och kanske något mer
 
 ffi
 Exceptions
