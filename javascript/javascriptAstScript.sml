@@ -22,7 +22,8 @@ val js_bind_element_def = Datatype `
 		| JSBVar js_varN
 		| JSBObject ((js_varN, js_bind_element option) alist)
 		| JSBArray (js_bind_element list)
-		| JSBRest js_bind_element`;
+		| JSBRest js_bind_element
+		| JSBDiscard`;
 
 val js_exp_def = Datatype `
   js_exp =

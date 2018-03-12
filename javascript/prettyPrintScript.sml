@@ -27,11 +27,14 @@ val bop_toString_def = Define `
 	(bop_toString JSOr a b = a ++ " || " ++ b)`;
 
 val bindElement_toString_def = tDefine "bindElement_toString" `
+	(bindElement_toString (JSBDiscard) = "cmlg__") /\
 	(bindElement_toString (JSBVar name) = name) /\
 	(bindElement_toString (JSBObject props) = "{" ++ join "," (MAP
 			(\(p, be). p ++ if IS_SOME be then ": " ++ bindElement_toString (THE be) else "")
 		props) ++ "}") /\
-	(bindElement_toString (JSBArray l) = "[" ++ join "," (MAP bindElement_toString l) ++ "]") /\
+	(bindElement_toString (JSBArray l) = let
+      bets = (\e. if e = JSBDiscard then "" else bindElement_toString e)
+    in "[" ++ join "," (MAP bets l) ++ "]") /\
 	(bindElement_toString (JSBRest b) = "..." ++ bindElement_toString b)`
 	cheat;
 

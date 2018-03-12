@@ -69,7 +69,7 @@ val compile_pat_def = tDefine "compile_pat" `
 	cheat;
 
 val create_deconstructor_def = tDefine "create_deconstructor" `
-	(create_deconstructor Pany = JSBVar (addGenPrefix "_")) /\
+	(create_deconstructor Pany = JSBDiscard) /\
 	(create_deconstructor (Pvar name) = JSBVar (addVarPrefix name)) /\
 	(create_deconstructor (Plit _) = JSBVar (addGenPrefix "_")) /\
 	(create_deconstructor (Pref pat) =
