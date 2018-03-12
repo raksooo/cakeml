@@ -6,8 +6,8 @@
   Assignment return undefined
   if else
   Datatyper
+  Patternmatching
 Likhet/Olikhet
-Patternmatching
 
 Semantik för deconstruction och kanske något mer
 
