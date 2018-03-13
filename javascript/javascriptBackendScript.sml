@@ -52,7 +52,7 @@ val ata_con_def = Define `
 	(ata_con (SOME (Short "nil")) _ = SOME [JSArray []]) /\
 	(ata_con (SOME (Short "::")) [head; tail] = SOME [JSArray [head; JSRest tail]]) /\
 	(ata_con NONE exps = SOME [JSObjectCreate [addGenPrefix "tuple", SOME (JSArray exps)]]) /\
-	(ata_con (SOME (Short t)) exps = SOME [JSNew (JSVar t) [JSArray exps]])`;
+	(ata_con (SOME (Short t)) exps = SOME [JSNew (JSVar (addVarPrefix t)) [JSArray exps]])`;
 
 val compile_pat_def = tDefine "compile_pat" `
 	(compile_pat Pany = JSObjectCreate ["pany", SOME (JSLit (JSBool T))]) /\
@@ -64,7 +64,7 @@ val compile_pat_def = tDefine "compile_pat" `
 		[("array", SOME (JSLit (JSBool T)));
 		("head", SOME (compile_pat l1)); ("tail", SOME (compile_pat l2))]) /\
 	(compile_pat (Pcon (SOME (Short "nil")) _) = JSObjectCreate ["array", SOME (JSLit (JSBool T))]) /\
-	(compile_pat (Pcon (SOME (Short cls)) fields) = JSObjectCreate [("cls", SOME (JSVar cls));
+	(compile_pat (Pcon (SOME (Short cls)) fields) = JSObjectCreate [("cls", SOME (JSVar (addVarPrefix cls)));
 		("fields", SOME (JSArray (MAP compile_pat fields)))])`
 	cheat;
 
@@ -82,6 +82,32 @@ val create_deconstructor_def = tDefine "create_deconstructor" `
 	(create_deconstructor (Pcon _ fields) = 
 		JSBObject [addGenPrefix "fields", SOME (JSBArray (MAP create_deconstructor fields))])`
 	cheat;
+
+(*
+val create_deconstructor_def = tDefine "create_deconstructor" `
+	(create_deconstructor dc Pany = (dc + 1, JSBVar (addGenPrefix ("_" ++ toString dc)))) /\
+	(create_deconstructor dc (Pvar name) = (dc, JSBVar (addVarPrefix name))) /\
+	(create_deconstructor dc (Plit _) = (dc + 1, JSBVar (addGenPrefix ("_" ++ toString dc)))) /\
+	(create_deconstructor dc (Pref pat) =
+		let (dc, deconstructor) = create_deconstructor dc pat
+		in (dc, JSBObject [addGenPrefix "v", SOME deconstructor])) /\
+	(create_deconstructor dc (Pcon NONE pats) =
+		let (dc, des) = FOLDL
+			(\r f. let (dc, d) = create_deconstructor (FST r) f in (dc, SND r ++ [d]))
+			(dc, []) pats
+		in (dc, JSBObject [addGenPrefix "tuple", SOME (JSBArray des)])) /\
+	(create_deconstructor dc (Pcon (SOME (Short "::")) [l1; l2]) = let
+			(dc, d1) = create_deconstructor dc l1;
+			(dc, d2) = create_deconstructor dc l2
+		in (dc, JSBArray [d1; JSBRest d2])) /\
+	(create_deconstructor dc (Pcon (SOME (Short "nil")) _) = (dc, JSBArray [])) /\
+	(create_deconstructor dc (Pcon _ fields) = 
+		let (dc, des) = FOLDL
+			(\r f. let (dc, d) = create_deconstructor (FST r) f in (dc, SND r ++ [d]))
+			(dc, []) fields
+		in (dc, JSBObject [addGenPrefix "fields", SOME (JSBArray des)]))`
+	cheat;
+*)
 
 val compile_pattern_match_def = Define `
 	(compile_pattern_match [] _ = JSNew (JSVar "Error")
@@ -165,9 +191,13 @@ val ata_exp_length_proof = Q.store_thm("ata_exp_length_proof",
 		>> cheat);
 
 val type_class_def_def = Define `
-	type_class_def extends name = let constructor = ("constructor", [addGenPrefix "fields"],
-				(JSObjectAssign (JSVar "this") (addGenPrefix "fields") (JSVar (addGenPrefix "fields"))))
-		in JSExp (JSClass name extends (if IS_NONE extends then [constructor] else []))`;
+	type_class_def extends name = let
+			constructor = ("constructor", [addGenPrefix "fields"],
+				(JSObjectAssign (JSVar "this") (addGenPrefix "fields") (JSVar (addGenPrefix "fields"))));
+			extends' = OPTION_MAP addVarPrefix extends
+		in JSVarDecl
+			(JSBVar (addVarPrefix name))
+			(JSClass NONE extends' (if IS_NONE extends then [constructor] else []))`;
 
 val ata_type_def_def = Define `
 	ata_type_def (_, name, fields) = type_class_def NONE name ::

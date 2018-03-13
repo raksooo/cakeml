@@ -3,13 +3,14 @@
   Letrec
   Referenser
   Tuples
-  Assignment return undefined
   if else
   Datatyper
   Patternmatching
 Likhet/Olikhet
+Använda app_list
 
 Semantik för deconstruction och kanske något mer
 
 ffi
 Exceptions
+Kompilera stora program med hål

@@ -6,8 +6,6 @@ max_print_depth := 11351351;
 
 fun compile' ast = ``THE (OPTION_MAP prog_toString (ata_prog ^ast))`` |> EVAL;
 fun compile input = process_topdecs input |> compile';
-fun toast' ast = ``THE (ata_prog ^ast)`` |> EVAL;
-fun toast input = process_topdecs input |> toast';
 
 val a = compile `
 	datatype 'a tree = Nil | Tree ('a tree) 'a ('a tree);
@@ -163,12 +161,27 @@ val a = compile `
 	val (Foo _ _) = Foo "foo" "bar";`;
 
 val a = compile `
+  datatype foobar = Foo int;
+  val (Foo _) = Foo 5;`;
+
+val a = compile `
 	val _ = case (1, (2, 3)) of
 		(n, (_, n)) => n;`;
 
 val a = compile `
 	val _ = case (1, 2) of
 		  (_, _) => 1;`;
+
+val a = compile `
+	fun tail x = case x of
+		(y :: ys) => ys;`;
+
+val a = compile `
+	datatype l = Nil | Dot l l;
+	fun size x = case x of
+			Nil => 1
+		| Dot l1 l2 => size l1 + size l2;
+	val a = size (Dot Nil (Dot Nil Nil));`;
 
 val _ = export_theory();
 

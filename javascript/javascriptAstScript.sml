@@ -40,7 +40,7 @@ val js_exp_def = Datatype `
 		| JSFun js_varN (js_bind_element list) js_exp
 		| JSApp js_exp (js_exp list)
 		| JSConditional js_exp js_exp js_exp
-		| JSClass js_varN (js_varN option) ((js_varN # (js_varN list) # js_exp) list)
+		| JSClass (js_varN option) (js_varN option) ((js_varN # (js_varN list) # js_exp) list)
 		| JSNew js_exp (js_exp list)`;
 
 

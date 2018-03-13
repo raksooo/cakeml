@@ -63,11 +63,12 @@ val exp_toString_def = tDefine "exp_toString" `
 	(exp_toString (JSBop op exp1 exp2) = "(" ++ bop_toString op
 				(exp_toString exp1) (exp_toString exp2) ++ ")") /\
 	(exp_toString (JSClass name extends methods) = let
+			name' = if IS_SOME name then " " ++ THE name else "";
 			extends' = if IS_SOME extends then " extends " ++ THE extends else "";
 			methods' = MAP
 				(\m. FST m ++ "(" ++ join "," (FST (SND m)) ++ ") { " ++ exp_toString (SND (SND m)) ++ " }")
 				methods
-		in "class " ++ name ++ extends' ++ " {" ++ join " " methods' ++ "}") /\
+		in "class" ++ name' ++ extends' ++ " {" ++ join " " methods' ++ "}") /\
 	(exp_toString (JSNew class fields) = "(new " ++ exp_toString class ++ "(" ++ join "," (MAP exp_toString fields) ++ "))")`
 	cheat;
 

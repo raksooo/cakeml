@@ -22,8 +22,7 @@ module.exports = function doesmatch(pat, content) {
     || (pat.plit && litEq(pat.plit, content))
     || (pat.pref && doesmatch(pat.pref, content[refProp]))
     || (pat.array && Array.isArray(content)
-      && (typeof pat.head === 'undefined'
-        ? content.length === 0
+      && (typeof pat.head === 'undefined' ? content.length === 0
         : doesmatch(pat.head, content[0]) && doesmatch(pat.tail, content.slice(1))))
     || (pat.tuple && every2(pat.tuple, content[tupleProp], doesmatch)))
     || (pat.cls && content instanceof pat.cls && every2(pat.fields, content[fieldsProp], doesmatch))
