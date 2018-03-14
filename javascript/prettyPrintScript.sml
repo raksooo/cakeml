@@ -24,7 +24,9 @@ val bop_toString_def = Define `
 	(bop_toString JSGt a b = a ++ ".greater(" ++ b ++ ")") /\
 	(bop_toString JSGeq a b = a ++ ".greaterOrEquals(" ++ b ++ ")") /\
 	(bop_toString JSAnd a b = a ++ " && " ++ b) /\
-	(bop_toString JSOr a b = a ++ " || " ++ b)`;
+	(bop_toString JSOr a b = a ++ " || " ++ b) /\
+	(bop_toString JSEq a b = "cmljs_eq(" ++ a ++ ", " ++ b ++ ")") /\
+	(bop_toString JSNeq a b = "!cmljs_eq(" ++ a ++ ", " ++ b ++ ")")`;
 
 val bindElement_toString_def = tDefine "bindElement_toString" `
 	(bindElement_toString (JSBDiscard) = "cmlg__") /\

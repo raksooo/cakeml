@@ -11,6 +11,10 @@ val js_lit_def = Datatype `
 		| JSBool bool
 		| JSNull`;
 
+val js_unary_op_def = Datatype `
+	js_unary_op =
+		| JSNeg`;
+
 val js_binary_op_def = Datatype `
   js_binary_op =
 		| JSPlus | JSMinus | JSTimes | JSDivide | JSModulo
@@ -34,6 +38,7 @@ val js_exp_def = Datatype `
 		| JSObjectCreate ((js_varN, js_exp option) alist)
 		| JSObjectAssign js_exp js_varN js_exp
 		| JSObjectRetrieve js_exp js_varN
+    | JSUop js_unary_op js_exp
     | JSBop js_binary_op js_exp js_exp
 		| JSVar js_varN
 		| JSAFun (js_bind_element list) js_exp

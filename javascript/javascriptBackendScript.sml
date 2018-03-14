@@ -44,6 +44,8 @@ val ata_var_def = Define `
 	(ata_var ":=" = JSAFun [JSBVar (addGenPrefix "a")] (JSAFun [JSBVar (addGenPrefix "b")]
 			(JSComma [JSObjectAssign (JSVar (addGenPrefix "a")) (addGenPrefix "v") (JSVar (addGenPrefix "b"));
 				UNDEFINED]))) /\
+	(ata_var "=" = ata_var' JSEq) /\
+	(ata_var "<>" = ata_var' JSNeq) /\
 	(ata_var name = JSVar (addVarPrefix name))`;
 
 val ata_con_def = Define `
@@ -224,7 +226,8 @@ val ata_top_def = Define `
 val imports_def = Define `
 	imports = [
 		JSConst (JSBVar "bigInt") (JSApp (JSVar "require") [JSLit (JSString "./BigInteger.min.js")]);
-		JSConst (JSBVar "doesmatch") (JSApp (JSVar "require") [JSLit (JSString "./patternmatch.js")])]`;
+		JSConst (JSBObject [("cmljs_eq", NONE);("doesmatch", NONE)])
+			(JSApp (JSVar "require") [JSLit (JSString "./patternmatch.js")])]`;
 
 val ata_prog_def = Define `
 	ata_prog tops = OPTION_MAP ($++ imports o FLAT) (sequenceOption (MAP ata_top tops))`;

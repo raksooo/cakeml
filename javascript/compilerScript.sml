@@ -183,5 +183,13 @@ val a = compile `
 		| Dot l1 l2 => size l1 + size l2;
 	val a = size (Dot Nil (Dot Nil Nil));`;
 
+val a = compile `
+	val _ = [2 = 2, 2 = 3, 2 = "foo", "foo" = "foo", "foo" = "bar",
+					(fn a => a) = "foo", (fn a => a) = (fn b => b + 1)]`;
+
+val a = compile `
+	val _ = [2 <> 2, 2 <> 3, 2 <> "foo", "foo" <> "foo", "foo" <> "bar",
+					(fn a => a) <> "foo", (fn a => a) <> (fn b => b + 1)]`;
+
 val _ = export_theory();
 

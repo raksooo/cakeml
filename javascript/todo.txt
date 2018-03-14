@@ -8,9 +8,9 @@
   Patternmatching
 Likhet/Olikhet
 Använda app_list
+Exceptions
+Kompilera stora program med hål
 
 Semantik för deconstruction och kanske något mer
 
 ffi
-Exceptions
-Kompilera stora program med hål
