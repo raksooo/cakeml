@@ -1,11 +1,11 @@
-open preamble basis javascriptBackendTheory prettyPrintTheory;
+open preamble basis javascriptBackendTheory prettyPrintTheory jsComputeLib;
 
 val _ = new_theory"compiler";
 
 max_print_depth := 11351351;
 
-fun compile' ast = ``THE (OPTION_MAP prog_toString (ata_prog ^ast))`` |> EVAL;
-fun compile input = process_topdecs input |> compile';
+fun compile' ast = ``THE (OPTION_MAP prog_toString (ata_prog ^ast))``;
+fun compile input = process_topdecs input |> compile' |> jseval;
 
 val a = compile `
 	datatype 'a tree = Nil | Tree ('a tree) 'a ('a tree);
@@ -190,6 +190,22 @@ val a = compile `
 val a = compile `
 	val _ = [2 <> 2, 2 <> 3, 2 <> "foo", "foo" <> "foo", "foo" <> "bar",
 					(fn a => a) <> "foo", (fn a => a) <> (fn b => b + 1)]`;
+
+val a = compile `
+	datatype 'a foo = Foo 'a;
+	val _ = Foo 5 = Foo 5;`;
+
+val a = compile `
+	exception Error int string;
+	val _ = raise (Error 5 "foo");`;
+
+val a = compile `
+	exception Error int;
+	fun err n = raise (Error n);
+	val _ = (err 5) handle
+			Error 4 => 0
+		| Error 3 => 1
+		| Error 5 => 2;`;
 
 val _ = export_theory();
 

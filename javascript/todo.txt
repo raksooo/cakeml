@@ -6,9 +6,9 @@
   if else
   Datatyper
   Patternmatching
-Likhet/Olikhet
-Använda app_list
-Exceptions
+  Likhet/Olikhet
+  Använda app_list
+  Exceptions
 Kompilera stora program med hål
 
 Semantik för deconstruction och kanske något mer

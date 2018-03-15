@@ -41,22 +41,23 @@ val js_exp_def = Datatype `
     | JSUop js_unary_op js_exp
     | JSBop js_binary_op js_exp js_exp
 		| JSVar js_varN
-		| JSAFun (js_bind_element list) js_exp
-		| JSFun js_varN (js_bind_element list) js_exp
+		| JSAFun (js_bind_element list) (js_stm list)
+		| JSFun js_varN (js_bind_element list) (js_stm list)
 		| JSApp js_exp (js_exp list)
 		| JSConditional js_exp js_exp js_exp
 		| JSClass (js_varN option) (js_varN option) ((js_varN # (js_varN list) # js_exp) list)
-		| JSNew js_exp (js_exp list)`;
+		| JSNew js_exp (js_exp list);
 
-
-val js_stm_def = Datatype `
 	js_stm =
+		| JSBlock (js_stm list)
 		| JSLet js_bind_element js_exp
 		| JSConst js_bind_element js_exp
 		| JSVarDecl js_bind_element js_exp
 		| JSExp js_exp
 		| JSIf js_exp js_stm js_stm
-		| JSThrow js_exp`;
+		| JSReturn js_exp
+		| JSThrow js_exp
+		| JSTryCatch (js_stm list) js_bind_element (js_stm list)`;
 
 val _ = type_abbrev("js_prog", ``: js_stm list``);
 
