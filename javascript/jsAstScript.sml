@@ -1,6 +1,6 @@
 open preamble;
 
-val _ = new_theory"javascriptAst";
+val _ = new_theory"jsAst";
 
 val js_varN_def = type_abbrev("js_varN", ``:string``);
 

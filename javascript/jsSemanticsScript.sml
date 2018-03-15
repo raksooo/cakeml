@@ -1,7 +1,7 @@
 (*
-open preamble javascriptAstTheory ffiTheory listTheory alistTheory;
+open preamble jsAstTheory ffiTheory listTheory alistTheory;
 
-val _ = new_theory"javascriptSemantics";
+val _ = new_theory"jsSemantics";
 
 val _ = Datatype `
   js_scope = <| eid : num; lexEnv : (js_varN, js_v) alist |>;

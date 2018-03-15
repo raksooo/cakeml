@@ -1,6 +1,6 @@
-open preamble basis javascriptBackendTheory prettyPrintTheory jsComputeLib;
+open preamble basis jsBackendTheory jsPrettyPrintTheory jsComputeLib;
 
-val _ = new_theory"compiler";
+val _ = new_theory"jsCompiler";
 
 max_print_depth := 11351351;
 

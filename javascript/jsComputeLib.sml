@@ -1,5 +1,5 @@
 structure jsComputeLib = struct
-open preamble javascriptBackendTheory prettyPrintTheory
+open preamble jsBackendTheory jsPrettyPrintTheory
 
 	val add_ata_compset = computeLib.extend_compset [computeLib.Defs [
 			compile_exp_def,

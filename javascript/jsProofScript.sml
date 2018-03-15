@@ -1,8 +1,8 @@
 (*
-open preamble compilerTheory javascriptSemanticsTheory javascriptBackendTheory
+open preamble compilerTheory jsSemanticsTheory jsBackendTheory
 		 semanticPrimitivesTheory evaluateTheory terminationTheory stringTheory;
 
-val _ = new_theory "proof"
+val _ = new_theory "jsProof"
 
 val optionSequence_def = Define `
   optionSequence l = FOLDL (OPTION_MAP2 (\l' v. l' ++ [v])) (SOME []) l`;

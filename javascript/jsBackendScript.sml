@@ -1,6 +1,6 @@
-open preamble javascriptAstTheory astTheory stringTheory miscTheory;
+open preamble jsAstTheory astTheory stringTheory miscTheory;
 
-val _ = new_theory"javascriptBackend";
+val _ = new_theory"jsBackend";
 
 val toList_def = Define `toList h = [h]`;
 

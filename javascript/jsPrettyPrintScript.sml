@@ -1,6 +1,6 @@
-open preamble javascriptAstTheory miscTheory;
+open preamble jsAstTheory miscTheory;
 
-val _ = new_theory"prettyPrint";
+val _ = new_theory"jsPrettyPrint";
 
 val appendList_def = Define `
 	appendList = FOLDL SmartAppend Nil`;
