@@ -4,7 +4,7 @@ val _ = new_theory"compiler";
 
 max_print_depth := 11351351;
 
-fun compile' ast = ``THE (OPTION_MAP prog_toString (ata_prog ^ast))``;
+fun compile' ast = ``THE (OPTION_MAP prog_toString (compile_prog ^ast))``;
 fun compile input = process_topdecs input |> compile' |> jseval;
 
 val a = compile `

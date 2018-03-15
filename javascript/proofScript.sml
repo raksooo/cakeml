@@ -75,7 +75,7 @@ every_case_tac
 val env_evaluate_proof = Q.prove(
   `!exps env st sem_env st' exps vs js_st js_env js_exps js_st' js_env' js_vs.
     env_rel env js_env /\
-    ata_exp exps = SOME js_exps /\
+    compile_exp exps = SOME js_exps /\
     js_evaluate_exp js_st js_env js_exps = (js_st', js_env', JSRval js_vs)
       ==> env_rel env js_env'`,
   cheat);
@@ -94,28 +94,28 @@ Cases_on `js_env'`
 
 `!exps js_exps vs st st' sem_env js_env.
 	(env_rel sem_env.v js_env /\
-  ata_exp exps = SOME js_exps /\
+  compile_exp exps = SOME js_exps /\
 	evaluate st sem_env exps = (st', Rval vs))
 		==> ?js_st js_vs js_st' js_env'.
 			(js_evaluate_exp js_st js_env js_exps = (js_st', js_env', JSRval js_vs) /\
       LIST_REL v_rel vs js_vs
       /\ env_rel sem_env.v js_env')`;
 
-recInduct ata_exp_ind >> rpt strip_tac
-  >> TRY (fs [evaluate_def, js_evaluate_exp_def, ata_exp_def]
+recInduct compile_exp_ind >> rpt strip_tac
+  >> TRY (fs [evaluate_def, js_evaluate_exp_def, compile_exp_def]
     >> rveq
-    >> fs [evaluate_def, js_evaluate_exp_def, ata_exp_def]
+    >> fs [evaluate_def, js_evaluate_exp_def, compile_exp_def]
     >> NO_TAC)
-  >> TRY (rename1 `ata_exp [Lannot _ _] = _`
-    >> fs [ata_exp_def, evaluate_def]
+  >> TRY (rename1 `compile_exp [Lannot _ _] = _`
+    >> fs [compile_exp_def, evaluate_def]
     >> rpt (first_x_assum (drule) >> strip_tac)
     >> asm_exists_tac
     >> fs []
     >> NO_TAC)
 
-fs [ata_exp_def, ata_op_def, evaluate_def]
+fs [compile_exp_def, compile_op_def, evaluate_def]
 >> every_case_tac
->> fs [ata_exp_def, ata_op_def, evaluate_def]
+>> fs [compile_exp_def, compile_op_def, evaluate_def]
 >> rveq
 >> pop_assum drule
 >> rpt(disch_then drule)
@@ -123,7 +123,7 @@ fs [ata_exp_def, ata_op_def, evaluate_def]
 >> first_x_assum drule
 >> rpt(disch_then drule)
 >> rpt strip_tac
->> imp_res_tac ata_exp_length_proof
+>> imp_res_tac compile_exp_length_proof
 >> cases_on `x` >> fs [js_evaluate_exp_def]
 >> rename1 `js_evaluate_exp _ _ [_] = (js_st1, js_env1, JSRval js_vs1)`
 >> qexists_tac `js_st`
@@ -136,7 +136,7 @@ rpt (qpat_x_assum `_ = _` (mp_tac o REWRITE_RULE[quantHeuristicsTheory.PAIR_EQ_E
 >> fs [js_evaluate_exp_def]
 >> rpt (first_x_assum (drule) >> strip_tac)
 >> Cases_on `x`
->- (imp_res_tac ata_exp_length_proof
+>- (imp_res_tac compile_exp_length_proof
   >> fs [])
 >> fs [js_evaluate_exp_def, v_rel_cases, env_rel_cases, env_evaluate_proof]
 
@@ -154,7 +154,7 @@ qexists_tac `js_st`
 fs []
 
 
-fs [ata_exp_def, evaluate_def]
+fs [compile_exp_def, evaluate_def]
 every_case_tac >> fs []
 rveq
 first_x_assum (qspec_then `h` assume_tac)
@@ -164,20 +164,20 @@ metis_tac []
 
 imp_res_tac evaluate_length_proof
 imp_res_tac fix_clock_js_evaluate_exp
-imp_res_tac ata_exp_length_proof
+imp_res_tac compile_exp_length_proof
 
 rw []
 fs []
 fs [evaluate_def]
 fs [js_evaluate_exp_def]
-fs [ata_exp_def]
+fs [compile_exp_def]
 fs [trd_def]
 every_case_tac
 rveq
 rfs []
 simp []
 
-fs [ata_exp_def]
+fs [compile_exp_def]
 every_case_tac
 fs []
 rveq
@@ -195,7 +195,7 @@ rveq
 fs [js_evaluate_exp_def, trd_def]
 imp_res_tac evaluate_length_proof
 imp_res_tac fix_clock_js_evaluate_exp
-imp_res_tac ata_exp_length_proof
+imp_res_tac compile_exp_length_proof
 rw []
 
 (*

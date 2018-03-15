@@ -20,49 +20,49 @@ val addTypePrefix_def = Define `
 
 val exp_size_not_zero = Q.prove(`!exp. 0 < exp_size exp`, Cases >> rw [exp_size_def]);
 
-val ata_lit_def = Define `
-	(ata_lit (IntLit i) = JSBigInt i) /\
-	(ata_lit (Char c) = JSString [c]) /\
-	(ata_lit (StrLit s) = JSString s)`;
+val compile_lit_def = Define `
+	(compile_lit (IntLit i) = JSBigInt i) /\
+	(compile_lit (Char c) = JSString [c]) /\
+	(compile_lit (StrLit s) = JSString s)`;
 
-val ata_op_def = Define `
-	ata_op op [a; b] = JSBop op a b`;
+val compile_op_def = Define `
+	compile_op op [a; b] = JSBop op a b`;
 
-val ata_var'_def = Define `
-	ata_var' op = JSAFun [JSBVar (addGenPrefix "a")]
+val compile_var'_def = Define `
+	compile_var' op = JSAFun [JSBVar (addGenPrefix "a")]
 		[JSReturn (JSAFun [JSBVar (addGenPrefix "b")]
 			[JSReturn (JSBop op (JSVar (addGenPrefix "a")) (JSVar (addGenPrefix "b")))])]`;
 
-val ata_var_def = Define `
-	(ata_var "+" = ata_var' JSPlus) /\
-	(ata_var "-" = ata_var' JSMinus) /\
-	(ata_var "*" = ata_var' JSTimes) /\
-	(ata_var "/" = ata_var' JSDivide) /\
-	(ata_var "<" = ata_var' JSLt) /\
-	(ata_var "<=" = ata_var' JSLeq) /\
-	(ata_var ">" = ata_var' JSGt) /\
-	(ata_var ">=" = ata_var' JSGeq) /\
-	(ata_var "!" = JSAFun [JSBVar (addGenPrefix "a")]
+val compile_var_def = Define `
+	(compile_var "+" = compile_var' JSPlus) /\
+	(compile_var "-" = compile_var' JSMinus) /\
+	(compile_var "*" = compile_var' JSTimes) /\
+	(compile_var "/" = compile_var' JSDivide) /\
+	(compile_var "<" = compile_var' JSLt) /\
+	(compile_var "<=" = compile_var' JSLeq) /\
+	(compile_var ">" = compile_var' JSGt) /\
+	(compile_var ">=" = compile_var' JSGeq) /\
+	(compile_var "!" = JSAFun [JSBVar (addGenPrefix "a")]
 			[JSReturn (JSObjectRetrieve (JSVar (addGenPrefix "a")) (addGenPrefix "v"))]) /\
-	(ata_var ":=" = JSAFun [JSBVar (addGenPrefix "a")] [JSReturn (JSAFun [JSBVar (addGenPrefix "b")]
+	(compile_var ":=" = JSAFun [JSBVar (addGenPrefix "a")] [JSReturn (JSAFun [JSBVar (addGenPrefix "b")]
 			[JSExp (JSObjectAssign (JSVar (addGenPrefix "a")) (addGenPrefix "v") (JSVar (addGenPrefix "b")));
 				JSReturn UNDEFINED])]) /\
-	(ata_var "=" = ata_var' JSEq) /\
-	(ata_var "<>" = ata_var' JSNeq) /\
-	(ata_var name = JSVar (addVarPrefix name))`;
+	(compile_var "=" = compile_var' JSEq) /\
+	(compile_var "<>" = compile_var' JSNeq) /\
+	(compile_var name = JSVar (addVarPrefix name))`;
 
-val ata_con_def = Define `
-	(ata_con (SOME (Short "true")) _ = SOME [JSLit (JSBool T)]) /\
-	(ata_con (SOME (Short "false")) _ = SOME [JSLit (JSBool F)]) /\
-	(ata_con (SOME (Short "nil")) _ = SOME [JSArray []]) /\
-	(ata_con (SOME (Short "::")) [head; tail] = SOME [JSArray [head; JSRest tail]]) /\
-	(ata_con NONE exps = SOME [JSObjectCreate [addGenPrefix "tuple", SOME (JSArray exps)]]) /\
-	(ata_con (SOME (Short t)) exps = SOME [JSNew (JSVar (addTypePrefix t)) [JSArray exps]])`;
+val compile_con_def = Define `
+	(compile_con (SOME (Short "true")) _ = SOME [JSLit (JSBool T)]) /\
+	(compile_con (SOME (Short "false")) _ = SOME [JSLit (JSBool F)]) /\
+	(compile_con (SOME (Short "nil")) _ = SOME [JSArray []]) /\
+	(compile_con (SOME (Short "::")) [head; tail] = SOME [JSArray [head; JSRest tail]]) /\
+	(compile_con NONE exps = SOME [JSObjectCreate [addGenPrefix "tuple", SOME (JSArray exps)]]) /\
+	(compile_con (SOME (Short t)) exps = SOME [JSNew (JSVar (addTypePrefix t)) [JSArray exps]])`;
 
 val compile_pat_def = tDefine "compile_pat" `
 	(compile_pat Pany = JSObjectCreate ["pany", SOME (JSLit (JSBool T))]) /\
 	(compile_pat (Pvar _) = JSObjectCreate ["pvar", SOME (JSLit (JSBool T))]) /\
-	(compile_pat (Plit lit) = JSObjectCreate ["plit", SOME (JSLit (ata_lit lit))]) /\
+	(compile_pat (Plit lit) = JSObjectCreate ["plit", SOME (JSLit (compile_lit lit))]) /\
 	(compile_pat (Pref pat) = JSObjectCreate ["pref", SOME (compile_pat pat)]) /\
 	(compile_pat (Pcon NONE pats) = JSObjectCreate ["tuple", SOME (JSArray (MAP compile_pat pats))]) /\
 	(compile_pat (Pcon (SOME (Short "::")) [l1; l2]) = JSObjectCreate
@@ -139,73 +139,73 @@ val type_class_def_def = Define `
 			(JSBVar name)
 			(JSClass NONE extends (if IS_NONE extends then [constructor] else []))`;
 
-val ata_type_def_def = Define `
-	ata_type_def (_, name, fields) = type_class_def NONE (addTypePrefix name) ::
+val compile_type_def_def = Define `
+	compile_type_def (_, name, fields) = type_class_def NONE (addTypePrefix name) ::
 		MAP (type_class_def (SOME (addTypePrefix name)) o addTypePrefix o FST) fields`;
 
-val ata_defn = Defn.Hol_multi_defns `
-	(ata_exp [] = SOME []) /\
-	(ata_exp (exp1::exp2::exps) = (OPTION_MAP FLAT o sequenceOption o MAP (ata_exp o toList))
+val compile_defns = Defn.Hol_multi_defns `
+	(compile_exp [] = SOME []) /\
+	(compile_exp (exp1::exp2::exps) = (OPTION_MAP FLAT o sequenceOption o MAP (compile_exp o toList))
 		(exp1::exp2::exps)) /\
-	(ata_exp [Lannot exp _] = ata_exp [exp]) /\
-	(ata_exp [Lit lit] = SOME [JSLit (ata_lit lit)]) /\
-	(ata_exp [Var (Short name)] = SOME [ata_var name]) /\
-	(ata_exp [Con id exps] = OPTION_BIND (ata_exp exps) (ata_con id)) /\
-	(ata_exp [If condition ifexp elseexp] = OPTION_MAP
+	(compile_exp [Lannot exp _] = compile_exp [exp]) /\
+	(compile_exp [Lit lit] = SOME [JSLit (compile_lit lit)]) /\
+	(compile_exp [Var (Short name)] = SOME [compile_var name]) /\
+	(compile_exp [Con id exps] = OPTION_BIND (compile_exp exps) (compile_con id)) /\
+	(compile_exp [If condition ifexp elseexp] = OPTION_MAP
 			(\l. [JSConditional (EL 0 l) (EL 1 l) (EL 2 l)])
-			(ata_exp [condition; ifexp; elseexp])) /\
-  (ata_exp [App Opapp exps] = OPTION_MAP (\l. [JSApp (HD l) (TL l)]) (ata_exp exps)) /\
-	(ata_exp [Fun par exp] = OPTION_MAP
+			(compile_exp [condition; ifexp; elseexp])) /\
+  (compile_exp [App Opapp exps] = OPTION_MAP (\l. [JSApp (HD l) (TL l)]) (compile_exp exps)) /\
+	(compile_exp [Fun par exp] = OPTION_MAP
 			(toList o (JSAFun [JSBVar (addVarPrefix par)]) o toList o JSReturn o HD)
-			(ata_exp [exp])) /\
-	(ata_exp [App Opref exps] = OPTION_MAP (\l. [JSObjectCreate [addGenPrefix "v", SOME (HD l)]]) (ata_exp exps)) /\
-  (ata_exp [Let (SOME name) exp1 exp2] =
+			(compile_exp [exp])) /\
+	(compile_exp [App Opref exps] = OPTION_MAP (\l. [JSObjectCreate [addGenPrefix "v", SOME (HD l)]]) (compile_exp exps)) /\
+  (compile_exp [Let (SOME name) exp1 exp2] =
     OPTION_MAP (\es. [JSApp (JSAFun [JSBVar (addVarPrefix name)] [JSReturn (LAST es)]) [HD es]])
-			(ata_exp [exp1; exp2])) /\
-  (ata_exp [Letrec funs exp] =
+			(compile_exp [exp1; exp2])) /\
+  (compile_exp [Letrec funs exp] =
 		let
 			funToJSFun = (\(name, par, body). OPTION_MAP
 				(\body'. JSFun (addVarPrefix name) [JSBVar (addVarPrefix par)] [JSReturn (HD body')])
-				(ata_exp [body]));
+				(compile_exp [body]));
 			funs' = sequenceOption (MAP funToJSFun funs);
 			letinConst = (\jsexp funs''.
 				[JSApp (JSAFun (MAP (JSBVar o addVarPrefix o FST) funs) [JSReturn (HD jsexp)]) funs''])
-		in OPTION_MAP2 letinConst (ata_exp [exp]) funs') /\
-	(ata_exp [Log And exp1 exp2] = let exps = ata_exp [exp1; exp2]
-		in OPTION_MAP (toList o ata_op JSAnd) exps) /\
-	(ata_exp [Log Or exp1 exp2] = let exps = ata_exp [exp1; exp2]
-		in OPTION_MAP (toList o ata_op JSOr) exps) /\
-	(ata_exp [Mat exp cases] = let
-			cases' = sequenceOption (MAP (\c. OPTION_MAP (\e. (FST c, HD e)) (ata_exp [SND c])) cases);
-			exp' = OPTION_MAP HD (ata_exp [exp])
+		in OPTION_MAP2 letinConst (compile_exp [exp]) funs') /\
+	(compile_exp [Log And exp1 exp2] = let exps = compile_exp [exp1; exp2]
+		in OPTION_MAP (toList o compile_op JSAnd) exps) /\
+	(compile_exp [Log Or exp1 exp2] = let exps = compile_exp [exp1; exp2]
+		in OPTION_MAP (toList o compile_op JSOr) exps) /\
+	(compile_exp [Mat exp cases] = let
+			cases' = sequenceOption (MAP (\c. OPTION_MAP (\e. (FST c, HD e)) (compile_exp [SND c])) cases);
+			exp' = OPTION_MAP HD (compile_exp [exp])
 		in OPTION_MAP2 (\c e. toList (compile_pattern_match c e)) cases' exp') /\
-	(ata_exp [Raise exp] = OPTION_MAP (toList o errorStm o HD) (ata_exp [exp])) /\
-	(ata_exp [Handle exp cases] = let
-			cases' = sequenceOption (MAP (\c. OPTION_MAP (\e. (FST c, HD e)) (ata_exp [SND c])) cases);
-			exp' = OPTION_MAP HD (ata_exp [exp])
+	(compile_exp [Raise exp] = OPTION_MAP (toList o errorStm o HD) (compile_exp [exp])) /\
+	(compile_exp [Handle exp cases] = let
+			cases' = sequenceOption (MAP (\c. OPTION_MAP (\e. (FST c, HD e)) (compile_exp [SND c])) cases);
+			exp' = OPTION_MAP HD (compile_exp [exp])
 		in OPTION_MAP2
 			(\c e. [JSApp (JSAFun [] [JSTryCatch [JSExp e] (JSBVar (addGenPrefix "error"))
 				[JSReturn (compile_pattern_match c (JSVar (addGenPrefix "error")))]]) []])
 			cases' exp') /\
-	(ata_exp _ = NONE) /\
+	(compile_exp _ = NONE) /\
 
-	(ata_dec (Dlet _ pat exp) = OPTION_MAP
-			(toList o (create_assignment pat) o HD) (ata_exp [exp])) /\
-	(ata_dec (Dletrec _ defs) = let
+	(compile_dec (Dlet _ pat exp) = OPTION_MAP
+			(toList o (create_assignment pat) o HD) (compile_exp [exp])) /\
+	(compile_dec (Dletrec _ defs) = let
 				exps = MAP (\(_, _, exp). exp) defs;
-				zipped = OPTION_MAP (\jsexps. ZIP (defs, jsexps)) (ata_exp exps);
+				zipped = OPTION_MAP (\jsexps. ZIP (defs, jsexps)) (compile_exp exps);
 				replaced = OPTION_MAP (MAP (\((name, par, _), exp). (name, par, exp))) zipped;
 			in OPTION_MAP (MAP
 				(\(name, par, exp).
 					JSVarDecl (JSBVar (addVarPrefix name)) (JSAFun [JSBVar (addVarPrefix par)] [JSReturn exp])))
 				replaced) /\
-	(ata_dec (Dtype _ type_defs) = SOME (FLAT (MAP ata_type_def type_defs))) /\
-	(ata_dec (Dexn _ name _) = SOME [type_class_def NONE (addTypePrefix name)]) /\
-	(ata_dec _ = NONE)`;
+	(compile_dec (Dtype _ type_defs) = SOME (FLAT (MAP compile_type_def type_defs))) /\
+	(compile_dec (Dexn _ name _) = SOME [type_class_def NONE (addTypePrefix name)]) /\
+	(compile_dec _ = NONE)`;
 
-val _ = Lib.with_flag (computeLib.auto_import_definitions, false) (List.map Defn.save_defn) ata_defn;
-val ata_exp_def = fetch "-" "ata_exp_def";
-val ata_dec_def = fetch "-" "ata_exp_def";
+val _ = Lib.with_flag (computeLib.auto_import_definitions, false) (List.map Defn.save_defn) compile_defns;
+val compile_exp_def = fetch "-" "compile_exp_def";
+val compile_dec_def = fetch "-" "compile_dec_def";
 
 (*
 	((WF_REL_TAC `measure (SUM o MAP exp_size)`)
@@ -216,23 +216,23 @@ val ata_dec_def = fetch "-" "ata_exp_def";
 		>> Induct_on `exps`
 		>> fs [exp_size_def]);
 
-val ata_exp_ind = fetch "-" "ata_exp_ind";
+val compile_exp_ind = fetch "-" "compile_exp_ind";
 
-val ata_exp_length_proof = Q.store_thm("ata_exp_length_proof",
-  `!exps js_exps. (ata_exp exps) = SOME js_exps ==> LENGTH exps = LENGTH js_exps`,
-	recInduct ata_exp_ind
+val compile_exp_length_proof = Q.store_thm("compile_exp_length_proof",
+  `!exps js_exps. (compile_exp exps) = SOME js_exps ==> LENGTH exps = LENGTH js_exps`,
+	recInduct compile_exp_ind
 		>> rpt strip_tac
-		>> fs [ata_exp_def, toList_def]
+		>> fs [compile_exp_def, toList_def]
 		>> every_case_tac
-		>> fs [ata_exp_def, toList_def]
+		>> fs [compile_exp_def, toList_def]
 		>> rveq
-		>> fs [ata_exp_def, toList_def, ata_con_def]
+		>> fs [compile_exp_def, toList_def, compile_con_def]
 		>> cheat);
 *)
 
-val ata_top_def = Define `
-	(ata_top (Tdec dec) = ata_dec dec) /\
-	(ata_top _ = NONE)`;
+val compile_top_def = Define `
+	(compile_top (Tdec dec) = compile_dec dec) /\
+	(compile_top _ = NONE)`;
 
 val imports_def = Define `
 	imports = [
@@ -240,8 +240,8 @@ val imports_def = Define `
 		JSConst (JSBObject [("cmljs_eq", NONE);("doesmatch", NONE)])
 			(JSApp (JSVar "require") [JSLit (JSString "./patternmatch.js")])]`;
 
-val ata_prog_def = Define `
-	ata_prog tops = OPTION_MAP ($++ imports o FLAT) (sequenceOption (MAP ata_top tops))`;
+val compile_prog_def = Define `
+	compile_prog tops = OPTION_MAP ($++ imports o FLAT) (sequenceOption (MAP compile_top tops))`;
 
 val _ = export_theory();
 
