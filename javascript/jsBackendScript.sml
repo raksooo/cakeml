@@ -4,8 +4,6 @@ val _ = new_theory"jsBackend";
 
 val toList_def = Define `toList h = [h]`;
 
-val UNDEFINED_def = Define `UNDEFINED = JSVar "undefined"`;
-
 val sequenceOption_def = Define `
   sequenceOption l = FOLDL (OPTION_MAP2 (\l' v. l' ++ [v])) (SOME []) l`;
 
@@ -45,8 +43,7 @@ val compile_var_def = Define `
 	(compile_var "!" = JSAFun [JSBVar (addGenPrefix "a")]
 			[JSReturn (JSObjectRetrieve (JSVar (addGenPrefix "a")) (addGenPrefix "v"))]) /\
 	(compile_var ":=" = JSAFun [JSBVar (addGenPrefix "a")] [JSReturn (JSAFun [JSBVar (addGenPrefix "b")]
-			[JSExp (JSObjectAssign (JSVar (addGenPrefix "a")) (addGenPrefix "v") (JSVar (addGenPrefix "b")));
-				JSReturn UNDEFINED])]) /\
+			[JSExp (JSObjectAssign (JSVar (addGenPrefix "a")) (addGenPrefix "v") (JSVar (addGenPrefix "b")))])]) /\
 	(compile_var "=" = compile_var' JSEq) /\
 	(compile_var "<>" = compile_var' JSNeq) /\
 	(compile_var name = JSVar (addVarPrefix name))`;
