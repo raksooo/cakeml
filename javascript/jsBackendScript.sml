@@ -52,9 +52,9 @@ val compile_con_def = Define `
 	(compile_con (SOME (Short "true")) _ = SOME [JSLit (JSBool T)]) /\
 	(compile_con (SOME (Short "false")) _ = SOME [JSLit (JSBool F)]) /\
 	(compile_con (SOME (Short "nil")) _ = SOME [JSArray []]) /\
-	(compile_con (SOME (Short "::")) [head; tail] = SOME [JSArray [head; JSRest tail]]) /\
+	(compile_con (SOME (Short "::")) [head; tail] = SOME [JSArray [head; JSUop JSRest tail]]) /\
 	(compile_con NONE exps = SOME [JSObjectCreate [addGenPrefix "tuple", SOME (JSArray exps)]]) /\
-	(compile_con (SOME (Short t)) exps = SOME [JSNew (JSVar (addTypePrefix t)) [JSArray exps]])`;
+	(compile_con (SOME (Short t)) exps = SOME [JSUop JSNew (JSApp (JSVar (addTypePrefix t)) [JSArray exps])])`;
 
 val compile_pat_def = tDefine "compile_pat" `
 	(compile_pat Pany = JSObjectCreate ["pany", SOME (JSLit (JSBool T))]) /\
@@ -116,8 +116,8 @@ val errorStm_def = Define `
 	errorStm t = JSApp (JSAFun [] [JSThrow t]) []`;
 
 val compile_pattern_match_def = Define `
-	(compile_pattern_match [] _ = errorStm (JSNew (JSVar "Error")
-			[JSLit (JSString "Pattern and expression have incompatible types")])) /\
+	(compile_pattern_match [] _ = errorStm (JSUop JSNew (JSApp (JSVar "Error")
+			[JSLit (JSString "Pattern and expression have incompatible types")]))) /\
 	(compile_pattern_match ((p, exp)::ps) content = JSConditional
 			(JSApp (JSVar "doesmatch") [compile_pat p; content])
 			(JSApp (JSAFun [create_deconstructor p] [JSReturn exp]) [content])
@@ -126,7 +126,7 @@ val compile_pattern_match_def = Define `
 val create_assignment_def = Define `
 	create_assignment pat exp = JSIf (JSApp (JSVar "doesmatch") [compile_pat pat; exp])
 			(JSVarDecl (create_deconstructor pat) exp)
-			(JSThrow (JSNew (JSVar "Error") [JSLit (JSString "Exception- Bind raised")]))`;
+			(JSThrow (JSUop JSNew (JSApp (JSVar "Error") [JSLit (JSString "Exception- Bind raised")])))`;
 
 val type_class_def_def = Define `
 	type_class_def extends name = let
@@ -184,7 +184,7 @@ val compile_defns = Defn.Hol_multi_defns `
 			(\c e. [JSApp (JSAFun [] [JSTryCatch [JSExp e] (JSBVar (addGenPrefix "error"))
 				[JSReturn (compile_pattern_match c (JSVar (addGenPrefix "error")))]]) []])
 			cases' exp') /\
-	(compile_exp _ = NONE) /\
+	(compile_exp _ = SOME [JSVar "undefined"]) /\
 
 	(compile_dec (Dlet _ pat exp) = OPTION_MAP
 			(toList o (create_assignment pat) o HD) (compile_exp [exp])) /\
@@ -198,7 +198,7 @@ val compile_defns = Defn.Hol_multi_defns `
 				replaced) /\
 	(compile_dec (Dtype _ type_defs) = SOME (FLAT (MAP compile_type_def type_defs))) /\
 	(compile_dec (Dexn _ name _) = SOME [type_class_def NONE (addTypePrefix name)]) /\
-	(compile_dec _ = NONE)`;
+	(compile_dec _ = SOME [JSEmpty])`;
 
 val _ = Lib.with_flag (computeLib.auto_import_definitions, false) (List.map Defn.save_defn) compile_defns;
 val compile_exp_def = fetch "-" "compile_exp_def";
@@ -229,7 +229,7 @@ val compile_exp_length_proof = Q.store_thm("compile_exp_length_proof",
 
 val compile_top_def = Define `
 	(compile_top (Tdec dec) = compile_dec dec) /\
-	(compile_top _ = NONE)`;
+	(compile_top _ = SOME [JSEmpty])`;
 
 val imports_def = Define `
 	imports = [

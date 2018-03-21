@@ -23,9 +23,9 @@ function cmljs_eq(a, b) {
 
 function doesmatch(pat, content) {
   return pat.pany === true
+    || pat.pvar === true
     || typeof content !== 'undefined'
-      && (pat.pvar === true
-        || (pat.plit && cmljs_eq(pat.plit, content))
+      && ((pat.plit && cmljs_eq(pat.plit, content))
         || (pat.pref && doesmatch(pat.pref, content[refProp]))
         || (pat.array && Array.isArray(content)
           && (typeof pat.head === 'undefined' ? content.length === 0

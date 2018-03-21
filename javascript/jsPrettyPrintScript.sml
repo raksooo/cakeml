@@ -20,6 +20,11 @@ val lit_toString_def = Define `
 	(lit_toString (JSBool F) = List "false") /\
 	(lit_toString (JSNull) = List "null")`;
 
+val uop_toString_def = Define `
+  (uop_toString JSNew a = appendList [List "new "; a]) /\
+  (uop_toString JSNeg a = appendList [List "!"; a]) /\
+  (uop_toString JSRest a = appendList [List "..."; a])`;
+
 val bop_toString_def = Define `
 	(bop_toString JSPlus a b = appendList [a; List ".add("; b; List ")"]) /\
 	(bop_toString JSMinus a b = appendList [a; List ".subtract("; b; List ")"]) /\
@@ -32,7 +37,8 @@ val bop_toString_def = Define `
 	(bop_toString JSAnd a b = appendList [a; List " && "; b]) /\
 	(bop_toString JSOr a b = appendList [a; List " || "; b]) /\
 	(bop_toString JSEq a b = appendList [List "cmljs_eq("; a; List ", "; b; List ")"]) /\
-	(bop_toString JSNeq a b = appendList [List "!cmljs_eq("; a; List ", "; b; List ")"])`;
+	(bop_toString JSNeq a b = appendList [List "!cmljs_eq("; a; List ", "; b; List ")"]) /\
+  (bop_toString JSComma a b = appendList [a; List ","; b])`;
 
 val bindElement_toString_def = tDefine "bindElement_toString" `
 	(bindElement_toString (JSBDiscard) = List "cmlg__") /\
@@ -51,9 +57,7 @@ val bindElement_toString_def = tDefine "bindElement_toString" `
 
 val toString_defn = Defn.Hol_multi_defns `
 	(exp_toString (JSLit lit) = lit_toString lit) /\
-	(exp_toString (JSComma exps) = appendList [List "("; join "," (MAP exp_toString exps); List ")"]) /\
 	(exp_toString (JSArray exps) = appendList [List "["; join "," (MAP exp_toString exps); List "]"]) /\
-	(exp_toString (JSRest exp) = appendList [List "..."; exp_toString exp]) /\
 	(exp_toString (JSAFun pars body) = appendList [List "(function(";
 			join "," (MAP bindElement_toString pars); List ") { "; stms_toString body; List " })"]) /\
 	(exp_toString (JSFun name pars body) = appendList [List "(function "; List name; List "(";
@@ -74,6 +78,7 @@ val toString_defn = Defn.Hol_multi_defns `
 	(exp_toString (JSObjectRetrieve exp prop) = appendList [exp_toString exp; List "."; List prop]) /\
 	(exp_toString (JSObjectAssign exp1 prop exp2) = appendList [
 			exp_toString exp1; List "."; List prop; List " = "; exp_toString exp2]) /\
+	(exp_toString (JSUop op exp) = uop_toString op (exp_toString exp)) /\
 	(exp_toString (JSBop op exp1 exp2) = appendList [List "(";
 			bop_toString op (exp_toString exp1) (exp_toString exp2); List ")"]) /\
 	(exp_toString (JSClass name extends methods) = let
@@ -84,8 +89,6 @@ val toString_defn = Defn.Hol_multi_defns `
 					exp_toString (SND (SND m)); List " }"])
 				methods
 		in appendList [List "class"; name'; extends'; List " {"; join " " methods'; List "}"]) /\
-	(exp_toString (JSNew class fields) = appendList [List "(new "; exp_toString class;
-			List "("; join "," (MAP exp_toString fields); List "))"]) /\
 
   (stm_toString (JSBlock stms) = appendList [List "{ "; stms_toString stms; List " }"]) /\
 	(stm_toString (JSExp exp) = appendList [exp_toString exp; List ";"]) /\
@@ -101,6 +104,7 @@ val toString_defn = Defn.Hol_multi_defns `
   (stm_toString (JSReturn exp) = appendList [List "return "; exp_toString exp; List ";"]) /\
   (stm_toString (JSTryCatch try bind catch) = appendList [List "try { "; stms_toString try;
     List " } catch("; bindElement_toString bind; List ") { "; stms_toString catch; List " }"]) /\
+  (stm_toString JSEmpty = List ";") /\
 
 	(stms_toString [] = Nil) /\
 	(stms_toString (stm::stms) = Append (stm_toString stm) (stms_toString stms))`;
