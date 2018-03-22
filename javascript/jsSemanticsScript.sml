@@ -84,15 +84,12 @@ val scopesLookup_def = Define `
 val envLookup_def = Define `
 	envLookup env name = scopesLookup env.scopes name`;
 
-val merge_scope_def = Define `
-  merge_scope s1 s2 = FOLDL (\s var. scopeArgDeclare s var) s1 s2.lexEnv`;
-
 val merge_scopes_def = Define `
   (merge_scopes [] ss2 = []) /\
   (merge_scopes ss1 [] = ss1) /\
   (merge_scopes (s1::ss1) (s2::ss2) = if s1.eid = s2.eid
-    then (merge_scope s1 s2) :: (merge_scopes ss1 ss2)
-    else (s1::ss1))`;
+    then s1 :: (merge_scopes ss1 ss2)
+    else ss2)`;
 
 val merge_envs_def = Define `
   merge_envs env1 env2 = let scopes1 = REVERSE env1.scopes; scopes2 =  REVERSE env2.scopes in
