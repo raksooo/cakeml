@@ -52,7 +52,7 @@ val compile_con_def = Define `
 	(compile_con (SOME (Short "true")) _ = SOME [JSLit (JSBool T)]) /\
 	(compile_con (SOME (Short "false")) _ = SOME [JSLit (JSBool F)]) /\
 	(compile_con (SOME (Short "nil")) _ = SOME [JSArray []]) /\
-	(compile_con (SOME (Short "::")) [head; tail] = SOME [JSArray [head; JSUop JSRest tail]]) /\
+	(compile_con (SOME (Short "::")) [head; tail] = SOME [JSArray [head; JSUop JSSpread tail]]) /\
 	(compile_con NONE exps = SOME [JSObjectCreate [addGenPrefix "tuple", SOME (JSArray exps)]]) /\
 	(compile_con (SOME (Short t)) exps = SOME [JSUop JSNew (JSApp (JSVar (addTypePrefix t)) [JSArray exps])])`;
 
@@ -68,49 +68,34 @@ val compile_pat_def = tDefine "compile_pat" `
 	(compile_pat (Pcon (SOME (Short "nil")) _) = JSObjectCreate ["array", SOME (JSLit (JSBool T))]) /\
 	(compile_pat (Pcon (SOME (Short cls)) fields) =
 		JSObjectCreate [("cls", SOME (JSVar (addTypePrefix cls)));
-			("fields", SOME (JSArray (MAP compile_pat fields)))])`
+			("fields", SOME (JSArray (MAP compile_pat fields)))]) /\
+	(compile_pat (Ptannot pat _) = compile_pat pat)`
 	cheat;
 
 val create_deconstructor_def = tDefine "create_deconstructor" `
-	(create_deconstructor Pany = JSBDiscard) /\
-	(create_deconstructor (Pvar name) = JSBVar (addVarPrefix name)) /\
-	(create_deconstructor (Plit _) = JSBVar (addGenPrefix "_")) /\
-	(create_deconstructor (Pref pat) =
-		JSBObject [addGenPrefix "v", SOME (create_deconstructor pat)]) /\
-	(create_deconstructor (Pcon NONE pats) =
-		JSBObject [addGenPrefix "tuple", SOME (JSBArray (MAP create_deconstructor pats))]) /\
-	(create_deconstructor (Pcon (SOME (Short "::")) [l1; l2]) =
-		JSBArray [create_deconstructor l1; JSBRest (create_deconstructor l2)]) /\
-	(create_deconstructor (Pcon (SOME (Short "nil")) _) = JSBArray []) /\
-	(create_deconstructor (Pcon _ fields) = 
-		JSBObject [addGenPrefix "fields", SOME (JSBArray (MAP create_deconstructor fields))])`
+	(create_deconstructor ac Pany = (ac + 1, JSBVar (addGenPrefix ("_" ++ toString ac)))) /\
+	(create_deconstructor ac (Pvar name) = (ac, JSBVar (addVarPrefix name))) /\
+	(create_deconstructor ac (Plit _) = (ac + 1, JSBVar (addGenPrefix ("_" ++ toString ac)))) /\
+	(create_deconstructor ac (Pref pat) =
+		let (ac', deconstructor) = create_deconstructor ac pat
+		in (ac', JSBObject [addGenPrefix "v", SOME deconstructor])) /\
+	(create_deconstructor ac (Pcon NONE pats) =
+		let (ac'', deconstructors) = FOLDL
+			(\r f. let (ac', d) = create_deconstructor (FST r) f in (ac', SND r ++ [d]))
+			(ac, []) pats
+		in (ac'', JSBObject [addGenPrefix "tuple", SOME (JSBArray deconstructors)])) /\
+	(create_deconstructor ac (Pcon (SOME (Short "nil")) []) = (ac, JSBArray [])) /\
+	(create_deconstructor ac (Pcon (SOME (Short "::")) [l1; l2]) = let
+			(ac', d1) = create_deconstructor ac l1;
+			(ac'', d2) = create_deconstructor ac' l2
+		in (ac'', JSBArray [d1; JSBRest d2])) /\
+	(create_deconstructor ac (Pcon _ fields) = 
+		let (ac'', deconstructors) = FOLDL
+			(\r f. let (ac', d) = create_deconstructor (FST r) f in (ac', SND r ++ [d]))
+			(ac, []) fields
+		in (ac'', JSBObject [addGenPrefix "fields", SOME (JSBArray deconstructors)])) /\
+	(create_deconstructor ac (Ptannot pat _) = create_deconstructor ac pat)`
 	cheat;
-
-(*
-val create_deconstructor_def = tDefine "create_deconstructor" `
-	(create_deconstructor dc Pany = (dc + 1, JSBVar (addGenPrefix ("_" ++ toString dc)))) /\
-	(create_deconstructor dc (Pvar name) = (dc, JSBVar (addVarPrefix name))) /\
-	(create_deconstructor dc (Plit _) = (dc + 1, JSBVar (addGenPrefix ("_" ++ toString dc)))) /\
-	(create_deconstructor dc (Pref pat) =
-		let (dc, deconstructor) = create_deconstructor dc pat
-		in (dc, JSBObject [addGenPrefix "v", SOME deconstructor])) /\
-	(create_deconstructor dc (Pcon NONE pats) =
-		let (dc, des) = FOLDL
-			(\r f. let (dc, d) = create_deconstructor (FST r) f in (dc, SND r ++ [d]))
-			(dc, []) pats
-		in (dc, JSBObject [addGenPrefix "tuple", SOME (JSBArray des)])) /\
-	(create_deconstructor dc (Pcon (SOME (Short "::")) [l1; l2]) = let
-			(dc, d1) = create_deconstructor dc l1;
-			(dc, d2) = create_deconstructor dc l2
-		in (dc, JSBArray [d1; JSBRest d2])) /\
-	(create_deconstructor dc (Pcon (SOME (Short "nil")) _) = (dc, JSBArray [])) /\
-	(create_deconstructor dc (Pcon _ fields) = 
-		let (dc, des) = FOLDL
-			(\r f. let (dc, d) = create_deconstructor (FST r) f in (dc, SND r ++ [d]))
-			(dc, []) fields
-		in (dc, JSBObject [addGenPrefix "fields", SOME (JSBArray des)]))`
-	cheat;
-*)
 
 val errorStm_def = Define `
 	errorStm t = JSApp (JSAFun [] [JSThrow t]) []`;
@@ -120,18 +105,18 @@ val compile_pattern_match_def = Define `
 			[JSLit (JSString "Pattern and expression have incompatible types")]))) /\
 	(compile_pattern_match ((p, exp)::ps) content = JSConditional
 			(JSApp (JSVar "doesmatch") [compile_pat p; content])
-			(JSApp (JSAFun [create_deconstructor p] [JSReturn exp]) [content])
+			(JSApp (JSAFun [SND (create_deconstructor 0 p)] [JSReturn exp]) [content])
 			(compile_pattern_match ps content))`;
 
 val create_assignment_def = Define `
 	create_assignment pat exp = JSIf (JSApp (JSVar "doesmatch") [compile_pat pat; exp])
-			(JSVarDecl (create_deconstructor pat) exp)
+			(JSVarDecl (SND (create_deconstructor 0 pat)) exp)
 			(JSThrow (JSUop JSNew (JSApp (JSVar "Error") [JSLit (JSString "Exception- Bind raised")])))`;
 
 val type_class_def_def = Define `
 	type_class_def extends name = let
 			constructor = ("constructor", [addGenPrefix "fields"],
-				(JSObjectAssign (JSVar "this") (addGenPrefix "fields") (JSVar (addGenPrefix "fields"))))
+				JSExp (JSObjectAssign (JSVar "this") (addGenPrefix "fields") (JSVar (addGenPrefix "fields"))))
 		in JSVarDecl
 			(JSBVar name)
 			(JSClass NONE extends (if IS_NONE extends then [constructor] else []))`;
@@ -145,6 +130,7 @@ val compile_defns = Defn.Hol_multi_defns `
 	(compile_exp (exp1::exp2::exps) = (OPTION_MAP FLAT o sequenceOption o MAP (compile_exp o toList))
 		(exp1::exp2::exps)) /\
 	(compile_exp [Lannot exp _] = compile_exp [exp]) /\
+	(compile_exp [Tannot exp _] = compile_exp [exp]) /\
 	(compile_exp [Lit lit] = SOME [JSLit (compile_lit lit)]) /\
 	(compile_exp [Var (Short name)] = SOME [compile_var name]) /\
 	(compile_exp [Con id exps] = OPTION_BIND (compile_exp exps) (compile_con id)) /\
@@ -186,6 +172,10 @@ val compile_defns = Defn.Hol_multi_defns `
 			cases' exp') /\
 	(compile_exp _ = SOME [JSVar "undefined"]) /\
 
+	(compile_dec (Dlet _ (Pvar name) exp) = OPTION_MAP
+			(toList o JSVarDecl (JSBVar (addVarPrefix name)) o HD) (compile_exp [exp])) /\
+	(compile_dec (Dlet _ Pany exp) = OPTION_MAP
+			(toList o JSVarDecl (JSBVar (addGenPrefix "_")) o HD) (compile_exp [exp])) /\
 	(compile_dec (Dlet _ pat exp) = OPTION_MAP
 			(toList o (create_assignment pat) o HD) (compile_exp [exp])) /\
 	(compile_dec (Dletrec _ defs) = let

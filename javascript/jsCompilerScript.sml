@@ -7,6 +7,9 @@ max_print_depth := 11351351;
 fun compile' ast = ``THE (OPTION_MAP prog_toString (compile_prog ^ast))``;
 fun compile input = process_topdecs input |> compile' |> jseval;
 
+val a = process_topdecs `
+	fun bar a = case a of 0 => 0 | _ => a - 1`;
+
 val a = compile `
 	datatype 'a tree = Nil | Tree ('a tree) 'a ('a tree);
 	val a = Tree Nil 5 (Tree Nil 3 Nil);`;
@@ -109,6 +112,10 @@ val a = compile `
 	val foo = fn a => a + 1;`;
 
 val a = compile `
+	val _ = case Tree Nil 5 Nil of
+			Tree t1 v t2 => v;`;
+
+val a = compile `
 	val _ = 1;`;
 
 val a = compile `
@@ -138,6 +145,9 @@ val a = compile `
 val a = compile `
 	val a = ref 5;
 	val ref b = a;`;
+
+val a = compile `
+	val (a : int) = 4;`;
 
 val a = compile `
 	datatype foobar = Foo string string | Bar int;
@@ -193,19 +203,19 @@ val a = compile `
 
 val a = compile `
 	datatype 'a foo = Foo 'a;
-	val _ = Foo 5 = Foo 5;`;
+	val (Foo (Foo n)) = Foo (Foo 4);`;
 
 val a = compile `
 	exception Error int string;
 	val _ = raise (Error 5 "foo");`;
 
 val a = compile `
-	exception Error int;
-	fun err n = raise (Error n);
-	val _ = (err 5) handle
-			Error 4 => 0
-		| Error 3 => 1
-		| Error 5 => 2;`;
+	exception Error;
+	val _ = (raise Error) handle
+			Error => 0`;
+
+val a = compile `
+	exception Error int;`;
 
 val _ = export_theory();
 

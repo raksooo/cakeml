@@ -23,7 +23,7 @@ val lit_toString_def = Define `
 val uop_toString_def = Define `
   (uop_toString JSNew a = appendList [List "new "; a]) /\
   (uop_toString JSNeg a = appendList [List "!"; a]) /\
-  (uop_toString JSRest a = appendList [List "..."; a])`;
+  (uop_toString JSSpread a = appendList [List "..."; a])`;
 
 val bop_toString_def = Define `
 	(bop_toString JSPlus a b = appendList [a; List ".add("; b; List ")"]) /\
@@ -41,7 +41,6 @@ val bop_toString_def = Define `
   (bop_toString JSComma a b = appendList [a; List ","; b])`;
 
 val bindElement_toString_def = tDefine "bindElement_toString" `
-	(bindElement_toString (JSBDiscard) = List "cmlg__") /\
 	(bindElement_toString (JSBVar name) = List name) /\
 	(bindElement_toString (JSBObject props) = let
 			props' = MAP
@@ -50,7 +49,7 @@ val bindElement_toString_def = tDefine "bindElement_toString" `
 				props
 		in appendList [List "{"; join "," props'; List "}"]) /\
 	(bindElement_toString (JSBArray l) = let
-      bets = MAP (\e. if e = JSBDiscard then Nil else bindElement_toString e) l
+      bets = MAP bindElement_toString l
     in appendList [List "["; join "," bets; List "]"]) /\
 	(bindElement_toString (JSBRest b) = appendList [List "..."; bindElement_toString b])`
 	cheat;
@@ -86,7 +85,7 @@ val toString_defn = Defn.Hol_multi_defns `
 			extends' = if IS_SOME extends then appendStringList [" extends "; THE extends] else Nil;
 			methods' = MAP
 				(\m. appendList [List (FST m); List "("; join "," (MAP List (FST (SND m))); List ") { ";
-					exp_toString (SND (SND m)); List " }"])
+					stm_toString (SND (SND m)); List " }"])
 				methods
 		in appendList [List "class"; name'; extends'; List " {"; join " " methods'; List "}"]) /\
 

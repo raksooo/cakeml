@@ -15,7 +15,7 @@ val js_unary_op_def = Datatype `
 	js_unary_op =
 		| JSNeg
     | JSNew
-		| JSRest`;
+		| JSSpread`;
 
 val js_binary_op_def = Datatype `
   js_binary_op =
@@ -46,7 +46,7 @@ val js_exp_def = Datatype `
 		| JSFun js_varN (js_bind_element list) (js_stm list)
 		| JSApp js_exp (js_exp list)
 		| JSConditional js_exp js_exp js_exp
-		| JSClass (js_varN option) (js_varN option) ((js_varN # (js_varN list) # js_exp) list);
+		| JSClass (js_varN option) (js_varN option) ((js_varN # (js_varN list) # js_stm) list);
 
 	js_stm =
 		| JSBlock (js_stm list)
