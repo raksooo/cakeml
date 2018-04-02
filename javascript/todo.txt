@@ -9,15 +9,20 @@
   Likhet/Olikhet
   Använda app_list
   Exceptions
+
   statements in methods instead of expressions
   tannot
   Fix pany
-char
+  assign, objectassing
+  comma separated list
 arrays
 ffi
+char
+
+  Semantik för deconstruction och spread
+  Semantik för funktionsapplication inklusive spread
+  Semantik för return
+
 Kompilera stora program med hål
-
-Semantik för deconstruction och spread
-
 kompilera basis
 

@@ -19,8 +19,8 @@ val js_unary_op_def = Datatype `
 
 val js_binary_op_def = Datatype `
   js_binary_op =
-		| JSPlus | JSMinus | JSTimes | JSDivide | JSModulo
-		| JSLt | JSGt | JSLeq | JSGeq | JSEq | JSNeq
+		| JSPlus | JSIntPlus | JSIntMinus | JSIntTimes | JSIntDivide | JSIntModulo
+		| JSIntLt | JSIntGt | JSIntLeq | JSIntGeq | JSEq | JSNeq
 		| JSAnd | JSOr
 		| JSComma`;
 
@@ -29,19 +29,18 @@ val js_bind_element_def = Datatype `
 		| JSBVar js_varN
 		| JSBObject ((js_varN, js_bind_element option) alist)
 		| JSBArray (js_bind_element list)
-		| JSBRest js_bind_element
-		| JSBDiscard`;
+		| JSBRest js_bind_element`;
 
 val js_exp_def = Datatype `
   js_exp =
     | JSLit js_lit
 		| JSArray (js_exp list)
-		| JSObjectCreate ((js_varN, js_exp option) alist)
-		| JSObjectAssign js_exp js_varN js_exp
-		| JSObjectRetrieve js_exp js_varN
+		| JSObject ((js_varN, js_exp option) alist)
+		| JSObjectProp js_exp js_varN
     | JSUop js_unary_op js_exp
     | JSBop js_binary_op js_exp js_exp
 		| JSVar js_varN
+		| JSAssign js_exp js_exp
 		| JSAFun (js_bind_element list) (js_stm list)
 		| JSFun js_varN (js_bind_element list) (js_stm list)
 		| JSApp js_exp (js_exp list)

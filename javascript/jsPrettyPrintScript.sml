@@ -26,14 +26,16 @@ val uop_toString_def = Define `
   (uop_toString JSSpread a = appendList [List "..."; a])`;
 
 val bop_toString_def = Define `
-	(bop_toString JSPlus a b = appendList [a; List ".add("; b; List ")"]) /\
-	(bop_toString JSMinus a b = appendList [a; List ".subtract("; b; List ")"]) /\
-	(bop_toString JSTimes a b = appendList [a; List ".multiply("; b; List ")"]) /\
-	(bop_toString JSDivide a b = appendList [a; List ".divide("; b; List ")"]) /\
-	(bop_toString JSLt a b = appendList [a; List ".lesser("; b; List ")"]) /\
-	(bop_toString JSLeq a b = appendList [a; List ".lesserOrEquals("; b; List ")"]) /\
-	(bop_toString JSGt a b = appendList [a; List ".greater("; b; List ")"]) /\
-	(bop_toString JSGeq a b = appendList [a; List ".greaterOrEquals("; b; List ")"]) /\
+  (bop_toString JSPlus a b = appendList [a; List "+"; b]) /\
+	(bop_toString JSIntPlus a b = appendList [a; List ".add("; b; List ")"]) /\
+	(bop_toString JSIntMinus a b = appendList [a; List ".subtract("; b; List ")"]) /\
+	(bop_toString JSIntTimes a b = appendList [a; List ".multiply("; b; List ")"]) /\
+	(bop_toString JSIntDivide a b = appendList [a; List ".divide("; b; List ")"]) /\
+	(bop_toString JSIntModulo a b = appendList [a; List ".mod("; b; List ")"]) /\
+	(bop_toString JSIntLt a b = appendList [a; List ".lesser("; b; List ")"]) /\
+	(bop_toString JSIntLeq a b = appendList [a; List ".lesserOrEquals("; b; List ")"]) /\
+	(bop_toString JSIntGt a b = appendList [a; List ".greater("; b; List ")"]) /\
+	(bop_toString JSIntGeq a b = appendList [a; List ".greaterOrEquals("; b; List ")"]) /\
 	(bop_toString JSAnd a b = appendList [a; List " && "; b]) /\
 	(bop_toString JSOr a b = appendList [a; List " || "; b]) /\
 	(bop_toString JSEq a b = appendList [List "cmljs_eq("; a; List ", "; b; List ")"]) /\
@@ -68,15 +70,15 @@ val toString_defn = Defn.Hol_multi_defns `
 				exp' = exp_toString exp;
 				args' = MAP exp_toString args
 			in appendList [exp'; List "("; join "," args'; List ")"]) /\
-	(exp_toString (JSObjectCreate decls) = let 
+	(exp_toString (JSObject decls) = let 
 				props = MAP
 					(\(p, exp). Append (List p)
 						(if IS_SOME exp then Append (List ": ") (exp_toString (THE exp)) else Nil))
 					decls
 			in appendList [List "({"; join "," props; List "})"]) /\
-	(exp_toString (JSObjectRetrieve exp prop) = appendList [exp_toString exp; List "."; List prop]) /\
-	(exp_toString (JSObjectAssign exp1 prop exp2) = appendList [
-			exp_toString exp1; List "."; List prop; List " = "; exp_toString exp2]) /\
+	(exp_toString (JSObjectProp exp prop) = appendList [exp_toString exp; List "."; List prop]) /\
+	(exp_toString (JSAssign exp1 exp2) = appendList [
+			exp_toString exp1; List " = "; exp_toString exp2]) /\
 	(exp_toString (JSUop op exp) = uop_toString op (exp_toString exp)) /\
 	(exp_toString (JSBop op exp1 exp2) = appendList [List "(";
 			bop_toString op (exp_toString exp1) (exp_toString exp2); List ")"]) /\

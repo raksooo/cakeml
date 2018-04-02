@@ -8,6 +8,7 @@ function every2(as, bs, f) {
 
 function cmljs_eq(a, b) {
 	return (a instanceof bigInt && b instanceof bigInt && a.equals(b))
+    || (a.cmlg_char === b.cmlg_char)
 		|| (a.pref && b.pref && cmljs_eq(a.cmlg_v, b.cmlg_v))
 		|| (Array.isArray(a) && Array.isArray(b) && every2(a, b, cmljs_eq))
 		|| (a.tuple && b.tuple && every2(a.cmlg_tuple, b.cmlg_tuple, cmljs_eq))

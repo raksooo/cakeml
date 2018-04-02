@@ -7,6 +7,14 @@ max_print_depth := 11351351;
 fun compile' ast = ``THE (OPTION_MAP prog_toString (compile_prog ^ast))``;
 fun compile input = process_topdecs input |> compile' |> jseval;
 
+val a = compile `
+	val a = 1;
+	val b = "foo";
+	val c = #"a";`;
+
+val a = compile `
+	val #"b" = #"c";`;
+
 val a = process_topdecs `
 	fun bar a = case a of 0 => 0 | _ => a - 1`;
 
@@ -16,7 +24,7 @@ val a = compile `
 
 val a = compile `
 	val foo = true;
-	val bar = foo;`;
+	val _ = foo;`;
 
 val a = compile `
 	val foo = true;

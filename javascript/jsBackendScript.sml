@@ -19,9 +19,9 @@ val addTypePrefix_def = Define `
 val exp_size_not_zero = Q.prove(`!exp. 0 < exp_size exp`, Cases >> rw [exp_size_def]);
 
 val compile_lit_def = Define `
-	(compile_lit (IntLit i) = JSBigInt i) /\
-	(compile_lit (Char c) = JSString [c]) /\
-	(compile_lit (StrLit s) = JSString s)`;
+	(compile_lit (IntLit i) = JSLit (JSBigInt i)) /\
+	(compile_lit (Char c) = JSObject [(addGenPrefix "char", SOME (JSLit (JSString [c])))]) /\
+	(compile_lit (StrLit s) = JSLit (JSString s))`;
 
 val compile_op_def = Define `
 	compile_op op [a; b] = JSBop op a b`;
@@ -32,18 +32,18 @@ val compile_var'_def = Define `
 			[JSReturn (JSBop op (JSVar (addGenPrefix "a")) (JSVar (addGenPrefix "b")))])]`;
 
 val compile_var_def = Define `
-	(compile_var "+" = compile_var' JSPlus) /\
-	(compile_var "-" = compile_var' JSMinus) /\
-	(compile_var "*" = compile_var' JSTimes) /\
-	(compile_var "/" = compile_var' JSDivide) /\
-	(compile_var "<" = compile_var' JSLt) /\
-	(compile_var "<=" = compile_var' JSLeq) /\
-	(compile_var ">" = compile_var' JSGt) /\
-	(compile_var ">=" = compile_var' JSGeq) /\
+	(compile_var "+" = compile_var' JSIntPlus) /\
+	(compile_var "-" = compile_var' JSIntMinus) /\
+	(compile_var "*" = compile_var' JSIntTimes) /\
+	(compile_var "/" = compile_var' JSIntDivide) /\
+	(compile_var "<" = compile_var' JSIntLt) /\
+	(compile_var "<=" = compile_var' JSIntLeq) /\
+	(compile_var ">" = compile_var' JSIntGt) /\
+	(compile_var ">=" = compile_var' JSIntGeq) /\
 	(compile_var "!" = JSAFun [JSBVar (addGenPrefix "a")]
-			[JSReturn (JSObjectRetrieve (JSVar (addGenPrefix "a")) (addGenPrefix "v"))]) /\
+			[JSReturn (JSObjectProp (JSVar (addGenPrefix "a")) (addGenPrefix "v"))]) /\
 	(compile_var ":=" = JSAFun [JSBVar (addGenPrefix "a")] [JSReturn (JSAFun [JSBVar (addGenPrefix "b")]
-			[JSExp (JSObjectAssign (JSVar (addGenPrefix "a")) (addGenPrefix "v") (JSVar (addGenPrefix "b")))])]) /\
+			[JSExp (JSAssign (JSObjectProp (JSVar (addGenPrefix "a")) (addGenPrefix "v")) (JSVar (addGenPrefix "b")))])]) /\
 	(compile_var "=" = compile_var' JSEq) /\
 	(compile_var "<>" = compile_var' JSNeq) /\
 	(compile_var name = JSVar (addVarPrefix name))`;
@@ -53,21 +53,21 @@ val compile_con_def = Define `
 	(compile_con (SOME (Short "false")) _ = SOME [JSLit (JSBool F)]) /\
 	(compile_con (SOME (Short "nil")) _ = SOME [JSArray []]) /\
 	(compile_con (SOME (Short "::")) [head; tail] = SOME [JSArray [head; JSUop JSSpread tail]]) /\
-	(compile_con NONE exps = SOME [JSObjectCreate [addGenPrefix "tuple", SOME (JSArray exps)]]) /\
+	(compile_con NONE exps = SOME [JSObject [addGenPrefix "tuple", SOME (JSArray exps)]]) /\
 	(compile_con (SOME (Short t)) exps = SOME [JSUop JSNew (JSApp (JSVar (addTypePrefix t)) [JSArray exps])])`;
 
 val compile_pat_def = tDefine "compile_pat" `
-	(compile_pat Pany = JSObjectCreate ["pany", SOME (JSLit (JSBool T))]) /\
-	(compile_pat (Pvar _) = JSObjectCreate ["pvar", SOME (JSLit (JSBool T))]) /\
-	(compile_pat (Plit lit) = JSObjectCreate ["plit", SOME (JSLit (compile_lit lit))]) /\
-	(compile_pat (Pref pat) = JSObjectCreate ["pref", SOME (compile_pat pat)]) /\
-	(compile_pat (Pcon NONE pats) = JSObjectCreate ["tuple", SOME (JSArray (MAP compile_pat pats))]) /\
-	(compile_pat (Pcon (SOME (Short "::")) [l1; l2]) = JSObjectCreate
+	(compile_pat Pany = JSObject ["pany", SOME (JSLit (JSBool T))]) /\
+	(compile_pat (Pvar _) = JSObject ["pvar", SOME (JSLit (JSBool T))]) /\
+	(compile_pat (Plit lit) = JSObject ["plit", SOME (compile_lit lit)]) /\
+	(compile_pat (Pref pat) = JSObject ["pref", SOME (compile_pat pat)]) /\
+	(compile_pat (Pcon NONE pats) = JSObject ["tuple", SOME (JSArray (MAP compile_pat pats))]) /\
+	(compile_pat (Pcon (SOME (Short "::")) [l1; l2]) = JSObject
 		[("array", SOME (JSLit (JSBool T)));
 		("head", SOME (compile_pat l1)); ("tail", SOME (compile_pat l2))]) /\
-	(compile_pat (Pcon (SOME (Short "nil")) _) = JSObjectCreate ["array", SOME (JSLit (JSBool T))]) /\
+	(compile_pat (Pcon (SOME (Short "nil")) _) = JSObject ["array", SOME (JSLit (JSBool T))]) /\
 	(compile_pat (Pcon (SOME (Short cls)) fields) =
-		JSObjectCreate [("cls", SOME (JSVar (addTypePrefix cls)));
+		JSObject [("cls", SOME (JSVar (addTypePrefix cls)));
 			("fields", SOME (JSArray (MAP compile_pat fields)))]) /\
 	(compile_pat (Ptannot pat _) = compile_pat pat)`
 	cheat;
@@ -116,7 +116,7 @@ val create_assignment_def = Define `
 val type_class_def_def = Define `
 	type_class_def extends name = let
 			constructor = ("constructor", [addGenPrefix "fields"],
-				JSExp (JSObjectAssign (JSVar "this") (addGenPrefix "fields") (JSVar (addGenPrefix "fields"))))
+				JSExp (JSAssign (JSObjectProp (JSVar "this") (addGenPrefix "fields")) (JSVar (addGenPrefix "fields"))))
 		in JSVarDecl
 			(JSBVar name)
 			(JSClass NONE extends (if IS_NONE extends then [constructor] else []))`;
@@ -131,7 +131,7 @@ val compile_defns = Defn.Hol_multi_defns `
 		(exp1::exp2::exps)) /\
 	(compile_exp [Lannot exp _] = compile_exp [exp]) /\
 	(compile_exp [Tannot exp _] = compile_exp [exp]) /\
-	(compile_exp [Lit lit] = SOME [JSLit (compile_lit lit)]) /\
+	(compile_exp [Lit lit] = SOME [compile_lit lit]) /\
 	(compile_exp [Var (Short name)] = SOME [compile_var name]) /\
 	(compile_exp [Con id exps] = OPTION_BIND (compile_exp exps) (compile_con id)) /\
 	(compile_exp [If condition ifexp elseexp] = OPTION_MAP
@@ -141,7 +141,7 @@ val compile_defns = Defn.Hol_multi_defns `
 	(compile_exp [Fun par exp] = OPTION_MAP
 			(toList o (JSAFun [JSBVar (addVarPrefix par)]) o toList o JSReturn o HD)
 			(compile_exp [exp])) /\
-	(compile_exp [App Opref exps] = OPTION_MAP (\l. [JSObjectCreate [addGenPrefix "v", SOME (HD l)]]) (compile_exp exps)) /\
+	(compile_exp [App Opref exps] = OPTION_MAP (\l. [JSObject [addGenPrefix "v", SOME (HD l)]]) (compile_exp exps)) /\
   (compile_exp [Let (SOME name) exp1 exp2] =
     OPTION_MAP (\es. [JSApp (JSAFun [JSBVar (addVarPrefix name)] [JSReturn (LAST es)]) [HD es]])
 			(compile_exp [exp1; exp2])) /\
