@@ -18,6 +18,9 @@ val addTypePrefix_def = Define `
 
 val exp_size_not_zero = Q.prove(`!exp. 0 < exp_size exp`, Cases >> rw [exp_size_def]);
 
+val js_unit_def = Define `
+	js_unit = JSObject [addGenPrefix "tuple", SOME (JSArray [])]`;
+
 val compile_lit_def = Define `
 	(compile_lit (IntLit i) = JSLit (JSBigInt i)) /\
 	(compile_lit (Char c) = JSObject [(addGenPrefix "char", SOME (JSLit (JSString [c])))]) /\
@@ -104,12 +107,12 @@ val compile_pattern_match_def = Define `
 	(compile_pattern_match [] _ = errorStm (JSUop JSNew (JSApp (JSVar "Error")
 			[JSLit (JSString "Pattern and expression have incompatible types")]))) /\
 	(compile_pattern_match ((p, exp)::ps) content = JSConditional
-			(JSApp (JSVar "doesmatch") [compile_pat p; content])
+			(JSApp (JSVar "cmljs_doesmatch") [compile_pat p; content])
 			(JSApp (JSAFun [SND (create_deconstructor 0 p)] [JSReturn exp]) [content])
 			(compile_pattern_match ps content))`;
 
 val create_assignment_def = Define `
-	create_assignment pat exp = JSIf (JSApp (JSVar "doesmatch") [compile_pat pat; exp])
+	create_assignment pat exp = JSIf (JSApp (JSVar "cmljs_doesmatch") [compile_pat pat; exp])
 			(JSVarDecl (SND (create_deconstructor 0 pat)) exp)
 			(JSThrow (JSUop JSNew (JSApp (JSVar "Error") [JSLit (JSString "Exception- Bind raised")])))`;
 
@@ -124,6 +127,42 @@ val type_class_def_def = Define `
 val compile_type_def_def = Define `
 	compile_type_def (_, name, fields) = type_class_def NONE (addTypePrefix name) ::
 		MAP (type_class_def (SOME (addTypePrefix name)) o addTypePrefix o FST) fields`;
+
+val compile_app_def = tDefine "compile_app" `
+	(compile_app Opref (exp::_) = SOME [JSObject [addGenPrefix "v", SOME exp]]) /\
+	(compile_app Opassign (exp1::exp2::_) = SOME [JSBop JSComma
+		(JSAssign (JSObjectProp exp1 (addGenPrefix "v")) exp2)
+		js_unit]) /\
+	(compile_app Equality exps = SOME [JSApp (JSVar "cmljs_eq") exps]) /\
+	(compile_app (Opn Plus) (exp1::exp2::_) = SOME [JSBop JSIntPlus exp1 exp2]) /\
+	(compile_app (Opn Minus) (exp1::exp2::_) = SOME [JSBop JSIntMinus exp1 exp2]) /\
+	(compile_app (Opn Times) (exp1::exp2::_) = SOME [JSBop JSIntTimes exp1 exp2]) /\
+	(compile_app (Opn Divide) (exp1::exp2::_) = SOME [JSBop JSIntDivide exp1 exp2]) /\
+	(compile_app (Opn Modulo) (exp1::exp2::_) = SOME [JSBop JSIntModulo exp1 exp2]) /\
+	(compile_app (Opb Lt) (exp1::exp2::_) = SOME [JSBop JSIntLt exp1 exp2]) /\
+	(compile_app (Opb Leq) (exp1::exp2::_) = SOME [JSBop JSIntLeq exp1 exp2]) /\
+	(compile_app (Opb Gt) (exp1::exp2::_) = SOME [JSBop JSIntGt exp1 exp2]) /\
+	(compile_app (Opb Geq) (exp1::exp2::_) = SOME [JSBop JSIntGeq exp1 exp2]) /\
+	(compile_app (FFI name) exps = SOME [JSApp (JSVar name) exps]) /\
+	(compile_app Ord (exp1::_) =
+		SOME [JSApp (JSObjectProp (JSObjectProp exp1 (addGenPrefix "char")) "charCodeAt") []]) /\
+	(compile_app Chr exps = SOME [JSObject
+		[(addGenPrefix "char"), SOME (JSApp (JSObjectProp (JSVar "String") "fromCharCode") exps)]]) /\
+	(compile_app (Chopb opb) exps = compile_app (Opb opb) exps) /\
+	(compile_app Strlen (exp1::_) = SOME [JSObjectProp exp1 "length"]) /\
+	(compile_app Aalloc (exp1::exp2::_) = SOME [JSObject [addGenPrefix "array",
+		SOME (JSApp (JSObjectProp (JSApp (JSUop JSNew (JSVar "Array"))
+			[JSApp (JSObjectProp exp1 "toJSNumber") []]) "fill") [exp2])]]) /\
+	(compile_app AallocEmpty _ = SOME [JSObject [addGenPrefix "array", SOME (JSArray [])]]) /\
+	(compile_app Alength (exp::_) =
+		SOME [JSObjectProp (JSObjectProp exp (addGenPrefix "array")) "length"]) /\
+	(compile_app Aupdate (exp1::exp2::exp3::_) = SOME [JSBop JSComma
+		(JSAssign (JSIndex (JSObjectProp exp1 (addGenPrefix "array"))
+			(JSApp (JSObjectProp exp2 "toJSNumber") [])) exp3)
+		js_unit]) /\
+	(compile_app Asub (exp1::exp2::_) = SOME [JSIndex (JSObjectProp exp1 (addGenPrefix "array"))
+			(JSApp (JSObjectProp exp2 "toJSNumber") [])]) /\
+	(compile_app _ _ = NONE)` cheat;
 
 val compile_defns = Defn.Hol_multi_defns `
 	(compile_exp [] = SOME []) /\
@@ -141,7 +180,7 @@ val compile_defns = Defn.Hol_multi_defns `
 	(compile_exp [Fun par exp] = OPTION_MAP
 			(toList o (JSAFun [JSBVar (addVarPrefix par)]) o toList o JSReturn o HD)
 			(compile_exp [exp])) /\
-	(compile_exp [App Opref exps] = OPTION_MAP (\l. [JSObject [addGenPrefix "v", SOME (HD l)]]) (compile_exp exps)) /\
+	(compile_exp [App op exps] = OPTION_CHOICE (OPTION_BIND (compile_exp exps) (compile_app op)) (SOME [Exp_not_compiled (App op exps)])) /\
   (compile_exp [Let (SOME name) exp1 exp2] =
     OPTION_MAP (\es. [JSApp (JSAFun [JSBVar (addVarPrefix name)] [JSReturn (LAST es)]) [HD es]])
 			(compile_exp [exp1; exp2])) /\
@@ -170,7 +209,7 @@ val compile_defns = Defn.Hol_multi_defns `
 			(\c e. [JSApp (JSAFun [] [JSTryCatch [JSExp e] (JSBVar (addGenPrefix "error"))
 				[JSReturn (compile_pattern_match c (JSVar (addGenPrefix "error")))]]) []])
 			cases' exp') /\
-	(compile_exp _ = SOME [JSVar "undefined"]) /\
+	(compile_exp [exp] = SOME [Exp_not_compiled exp]) /\
 
 	(compile_dec (Dlet _ (Pvar name) exp) = OPTION_MAP
 			(toList o JSVarDecl (JSBVar (addVarPrefix name)) o HD) (compile_exp [exp])) /\
@@ -188,7 +227,7 @@ val compile_defns = Defn.Hol_multi_defns `
 				replaced) /\
 	(compile_dec (Dtype _ type_defs) = SOME (FLAT (MAP compile_type_def type_defs))) /\
 	(compile_dec (Dexn _ name _) = SOME [type_class_def NONE (addTypePrefix name)]) /\
-	(compile_dec _ = SOME [JSEmpty])`;
+	(compile_dec dec = SOME [Dec_not_compiled dec])`;
 
 val _ = Lib.with_flag (computeLib.auto_import_definitions, false) (List.map Defn.save_defn) compile_defns;
 val compile_exp_def = fetch "-" "compile_exp_def";
@@ -219,16 +258,19 @@ val compile_exp_length_proof = Q.store_thm("compile_exp_length_proof",
 
 val compile_top_def = Define `
 	(compile_top (Tdec dec) = compile_dec dec) /\
-	(compile_top _ = SOME [JSEmpty])`;
+	(compile_top top = SOME [Top_not_compiled top])`;
 
 val imports_def = Define `
 	imports = [
-		JSConst (JSBVar "bigInt") (JSApp (JSVar "require") [JSLit (JSString "./BigInteger.min.js")]);
-		JSConst (JSBObject [("cmljs_eq", NONE);("doesmatch", NONE)])
+		JSVarDecl (JSBVar "bigInt") (JSApp (JSVar "require") [JSLit (JSString "./BigInteger.min.js")]);
+		JSVarDecl (JSBObject [("cmljs_append", NONE);("cmljs_eq", NONE);("cmljs_doesmatch", NONE)])
 			(JSApp (JSVar "require") [JSLit (JSString "./patternmatch.js")])]`;
 
 val compile_prog_def = Define `
 	compile_prog tops = OPTION_MAP ($++ imports o FLAT) (sequenceOption (MAP compile_top tops))`;
+
+val compile_no_imports_def = Define `
+	compile_no_imports tops = OPTION_MAP FLAT (sequenceOption (MAP compile_top tops))`;
 
 val _ = export_theory();
 

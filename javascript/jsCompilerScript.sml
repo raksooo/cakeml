@@ -1,4 +1,4 @@
-open preamble basis jsBackendTheory jsPrettyPrintTheory jsComputeLib;
+open preamble basis basisSubsetTheory jsBackendTheory jsPrettyPrintTheory jsComputeLib jsSemanticsTheory;
 
 val _ = new_theory"jsCompiler";
 
@@ -6,6 +6,51 @@ max_print_depth := 11351351;
 
 fun compile' ast = ``THE (OPTION_MAP prog_toString (compile_prog ^ast))``;
 fun compile input = process_topdecs input |> compile' |> jseval;
+
+fun toast' ast = ``THE (compile_prog ^ast)``;
+fun toast input = process_topdecs input |> toast' |> jseval;
+
+fun sem' ast = ``js_evaluate_prog (initial_state with <| clock := 1000 |>) base_env (THE (compile_no_imports ^ast))``;
+fun sem input = process_topdecs input |> sem' |> jseval;
+
+val basisJS = ``compile_prog basisSubset`` |> jseval;
+
+val a = sem `
+	fun foo a = a + 5
+	val b = foo 2;`;
+
+val a = compile' ``
+	[Tdec (Dlet unknown_loc Pany
+		(App Aalloc [Lit (IntLit 5); Lit (StrLit "foo")]))]`` |> jseval;
+
+val a = compile' ``
+	[Tdec (Dlet unknown_loc Pany
+		(App AallocEmpty []))]`` |> jseval;
+
+val a = compile' ``
+	[Tdec (Dlet unknown_loc (Pvar "a")
+		(App Aalloc [Lit (IntLit 5); Lit (StrLit "foo")]));
+	Tdec (Dlet unknown_loc (Pvar "b")
+		(App Asub [Var (Short "a"); Lit (IntLit 3)]))]`` |> jseval;
+
+val a = compile' ``
+	[Tdec (Dlet unknown_loc (Pvar "a")
+		(App Aalloc [Lit (IntLit 5); Lit (StrLit "foo")]));
+	Tdec (Dlet unknown_loc (Pvar "b")
+		(App Alength [Var (Short "a")]))]`` |> jseval;
+
+val a = compile' ``
+	[Tdec (Dlet unknown_loc (Pvar "a")
+		(App Aalloc [Lit (IntLit 5); Lit (StrLit "foo")]));
+	Tdec (Dlet unknown_loc (Pvar "b")
+		(App Aupdate
+			[Var (Short "a"); Lit (IntLit 3); Lit (StrLit "bar")]))]`` |> jseval;
+
+val a = compile `
+	val _ = #(sum) 1 2 3;`;
+
+val a = process_topdecs `
+	val _ = ref 5;`;
 
 val a = compile `
 	val a = 1;

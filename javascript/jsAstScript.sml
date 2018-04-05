@@ -1,4 +1,4 @@
-open preamble;
+open preamble astTheory;
 
 val _ = new_theory"jsAst";
 
@@ -19,8 +19,10 @@ val js_unary_op_def = Datatype `
 
 val js_binary_op_def = Datatype `
   js_binary_op =
-		| JSPlus | JSIntPlus | JSIntMinus | JSIntTimes | JSIntDivide | JSIntModulo
-		| JSIntLt | JSIntGt | JSIntLeq | JSIntGeq | JSEq | JSNeq
+		| JSIntPlus | JSIntMinus | JSIntTimes | JSIntDivide | JSIntModulo
+		| JSIntLt | JSIntGt | JSIntLeq | JSIntGeq
+		| JSPlus | JSMinus | JSTimes | JSDivide | JSModulo
+		| JSLt | JSGt | JSLeq | JSGeq | JSEq | JSNeq
 		| JSAnd | JSOr
 		| JSComma`;
 
@@ -33,8 +35,10 @@ val js_bind_element_def = Datatype `
 
 val js_exp_def = Datatype `
   js_exp =
+		| Exp_not_compiled exp
     | JSLit js_lit
 		| JSArray (js_exp list)
+		| JSIndex js_exp js_exp
 		| JSObject ((js_varN, js_exp option) alist)
 		| JSObjectProp js_exp js_varN
     | JSUop js_unary_op js_exp
@@ -48,6 +52,8 @@ val js_exp_def = Datatype `
 		| JSClass (js_varN option) (js_varN option) ((js_varN # (js_varN list) # js_stm) list);
 
 	js_stm =
+		| Dec_not_compiled dec
+		| Top_not_compiled top
 		| JSBlock (js_stm list)
 		| JSLet js_bind_element js_exp
 		| JSConst js_bind_element js_exp

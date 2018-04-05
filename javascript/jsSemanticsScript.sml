@@ -2,6 +2,9 @@ open preamble jsAstTheory ffiTheory listTheory alistTheory;
 
 val _ = new_theory"jsSemantics";
 
+val sequenceOption_def = Define `
+  sequenceOption l = FOLDL (OPTION_MAP2 (\l' v. l' ++ [v])) (SOME []) l`;
+
 val _ = Datatype `
   js_scope = <| eid : num; function : bool; lexEnv : (js_varN, (js_v # bool)) alist |>;
 
@@ -64,7 +67,10 @@ val scopeLetDeclare_def = Define `
 
 val scopesVarDeclare_def = Define `
 	(scopesVarDeclare [] _ = NONE) /\
-	(scopesVarDeclare (scope::scopes) var = OPTION_MAP (\s. s :: scopes) (scopeVarDeclare scope var))`;
+	(scopesVarDeclare (scope::scopes) var = if scope.function then
+			OPTION_MAP (\s. s :: scopes) (scopeVarDeclare scope var)
+		else
+			OPTION_MAP (\ss. scope :: ss) (scopesVarDeclare scopes var))`;
 
 val scopesLetDeclare_def = Define `
 	(scopesLetDeclare [] _ = NONE) /\
@@ -134,6 +140,8 @@ val is_truthy_def = Define `
 		\/ v = JSLitv (JSString ""))`;
 
 val js_evaluate_bop_def = Define `
+	(js_evaluate_bop JSPlusInt (JSLitv (JSBigInt a)) (JSLitv (JSBigInt b)) =
+		JSRval [JSLitv (JSBigInt (a + b))]) /\
 	(js_evaluate_bop JSPlus (JSLitv (JSString s)) v2 =
 		JSRval [JSLitv (JSString (s ++ js_v_to_string v2))]) /\
 	(js_evaluate_bop JSPlus v1 (JSLitv (JSString s)) =
@@ -157,21 +165,24 @@ val js_exp_size_rel = Q.prove( `!args. SUM (MAP js_exp_size args) < js_exp1_size
 *)
 
 val js_evaluate_bind_def = tDefine "js_evaluate_bind_def" `
-	(js_evaluate_bind (JSBVar name) v = [(name, v)]) /\
+	(js_evaluate_bind (JSBVar name) v = SOME [(name, v)]) /\
 	(js_evaluate_bind (JSBArray [JSBRest b]) (JSArrayv vs) = js_evaluate_bind b (JSArrayv vs)) /\
-	(js_evaluate_bind (JSBArray []) (JSArrayv _) = []) /\
-	(js_evaluate_bind (JSBArray (b::bs)) (JSArrayv []) =
-		js_evaluate_bind b JSUndefined ++ js_evaluate_bind (JSBArray bs) (JSArrayv [])) /\
-	(js_evaluate_bind (JSBArray (b::bs)) (JSArrayv (v::vs)) =
-		js_evaluate_bind b v ++ js_evaluate_bind (JSBArray bs) (JSArrayv vs)) /\
-	(js_evaluate_bind (JSBObject []) (JSObjectv _) = []) /\
+	(js_evaluate_bind (JSBArray []) (JSArrayv _) = SOME []) /\
+	(js_evaluate_bind (JSBArray (b::bs)) (JSArrayv []) = OPTION_MAP2 $++
+		(js_evaluate_bind b JSUndefined) (js_evaluate_bind (JSBArray bs) (JSArrayv []))) /\
+	(js_evaluate_bind (JSBArray (b::bs)) (JSArrayv (v::vs)) = OPTION_MAP2 $++
+		(js_evaluate_bind b v) (js_evaluate_bind (JSBArray bs) (JSArrayv vs))) /\
+	(js_evaluate_bind (JSBObject []) (JSObjectv _) = SOME []) /\
 	(js_evaluate_bind (JSBObject ((bn, bv)::bs)) (JSObjectv vs) = let
 			rest = js_evaluate_bind (JSBObject bs) (JSObjectv vs)
 		in case ALOOKUP vs bn of
-			| SOME vv => if IS_SOME bv then (js_evaluate_bind (THE bv) vv ++ rest)
-							else ((bn, vv) :: rest)
-			| NONE => if IS_SOME bv then (js_evaluate_bind (THE bv) JSUndefined ++ rest)
-							else ((bn, JSUndefined) :: rest))`
+			| SOME vv => if IS_SOME bv then OPTION_MAP2 $++ (js_evaluate_bind (THE bv) vv) rest
+							else OPTION_MAP (\r. (bn, vv) :: r) rest
+			| NONE => if IS_SOME bv then OPTION_MAP2 $++ (js_evaluate_bind (THE bv) JSUndefined) rest
+							else OPTION_MAP (\r. (bn, JSUndefined) :: r) rest) /\
+	(js_evaluate_bind (JSBObject _) JSUndefined = NONE) /\
+	(js_evaluate_bind (JSBObject _) (JSLitv JSNull) = NONE) /\
+	(js_evaluate_bind _ _ = NONE)`
 	cheat;
 
 val declareMultiple_def = Define `
@@ -240,15 +251,19 @@ val evaluate_defns = Defn.Hol_multi_defns `
     | (st', env', JSRval [JSClosure name cenv pars body]) =>
         (case js_fix_clock st' (js_evaluate_exp st' env' [JSArray args]) of
           | (st2, env2, JSRval [JSArrayv vs]) => let
-              parargs = FLAT (MAP (UNCURRY js_evaluate_bind) (js_par_zip (pars, vs)));
-							withname =
-								OPTION_BIND name (\n. envVarDeclare cenv (n, (JSClosure name cenv pars body)));
-							cenv' = if IS_SOME withname then THE withname else cenv
-              in (case declareMultiple envVarDeclare (merge_envs cenv' env2) parargs of
-								| SOME cenv2 => if st2.clock = 0 then (st2, env2, CLOCK_TIMEOUT)
-										else let (st3, cenv3, res) = js_evaluate_stm (js_dec_clock st2) cenv2 body
-											in (st3, leave_scope cenv3, res)
-								| NONE => (st2, env2, JSRerr "Should not happen"))
+								parargs = OPTION_MAP FLAT
+									(sequenceOption (MAP (UNCURRY js_evaluate_bind) (js_par_zip (pars, vs))));
+								withname =
+									OPTION_BIND name (\n. envVarDeclare cenv (n, (JSClosure name cenv pars body)));
+								cenv' = if IS_SOME withname then THE withname else cenv
+							in (case parargs of
+								| SOME parargs =>
+										(case declareMultiple envVarDeclare (merge_envs cenv' env2) parargs of
+											| SOME cenv2 => if st2.clock = 0 then (st2, env2, CLOCK_TIMEOUT)
+													else let (st3, cenv3, res) = js_evaluate_stm (js_dec_clock st2) cenv2 body
+														in (st3, leave_scope cenv3, res)
+											| NONE => (st2, env2, JSRerr "Should not happen"))
+								| NONE => (st2, env2, JSRerr "Invalid pattern"))
           | res => res)
 			| (st', env', JSRval [JSLitv lit]) => (st', env',
           JSRerr ("TypeError: " ++ (js_v_to_string (JSLitv lit)) ++ " is not a function"))
@@ -267,23 +282,26 @@ val evaluate_defns = Defn.Hol_multi_defns `
 			| res => res) /\
 	(js_evaluate_stm st env [JSExp exp] = js_evaluate_exp st env [exp]) /\
 	(js_evaluate_stm st env [JSVarDecl be exp] = case js_evaluate_exp st env [exp] of
-			| (st', env', JSRval [v]) =>
-				(case declareMultiple envVarDeclare env' (js_evaluate_bind be v) of
-					| SOME env2 => (st', env2, JSRval [JSUndefined]))
+			| (st', env', JSRval [v]) => 
+				(case OPTION_BIND (js_evaluate_bind be v) (declareMultiple envVarDeclare env') of
+					| SOME env2 => (st', env2, JSRval [JSUndefined])
+					| NONE => (st', env', JSRerr "Invalid pattern"))
 			| res => res) /\
 	(js_evaluate_stm st env [JSLet be exp] = case js_evaluate_exp st env [exp] of
-			| (st', env', JSRval [v]) => 
-				(case declareMultiple envLetDeclare env' (js_evaluate_bind be v) of
+			| (st', env', JSRval [v]) => (case js_evaluate_bind be v of
+				| SOME vs => (case declareMultiple envLetDeclare env' vs of
 					| SOME env2 => (st', env2, JSRval [JSUndefined])
 					| NONE => (st', env',
-							JSRerr ("SyntaxError: Identifier has already been declared")))
+							JSRerr "SyntaxError: Identifier has already been declared"))
+				| NONE => (st', env', JSRerr "Invalid pattern"))
 			| res => res) /\
 	(js_evaluate_stm st env [JSConst be exp] = case js_evaluate_exp st env [exp] of
-			| (st', env', JSRval [v]) => 
-				(case declareMultiple envConstDeclare env' (js_evaluate_bind be v) of
+			| (st', env', JSRval [v]) => (case js_evaluate_bind be v of
+				| SOME vs => (case declareMultiple envLetDeclare env' vs of
 					| SOME env2 => (st', env2, JSRval [JSUndefined])
 					| NONE => (st', env',
 							JSRerr ("SyntaxError: Identifier has already been declared")))
+				| NONE => (st', env', JSRerr "Invalid pattern"))
 			| res => res) /\
 	(js_evaluate_stm st env _ = (st, env, NOT_IMPLEMENTED))`;
 

@@ -1,9 +1,10 @@
-(*
-open preamble basisFunctionsLib ml_translatorLib ml_progLib ArrayProgTheory
+open basis ListProgTheory
 
-val _ = new_theory"basisSubset";
+val _ = new_theory "basisSubset";
 
-val _ = translation_extends"ArrayProg";
+max_print_depth := 11351351;
+
+val _ = translation_extends "ListProg";
 
 val basisSubset_st = get_ml_prog_state ();
 
@@ -13,5 +14,4 @@ val basisSubset_prog = basisSubset_st |> remove_snocs
 val basisSubset_def = Define `basisSubset = ^basisSubset_prog`;
 
 val _ = export_theory();
-*)
 

@@ -14,7 +14,7 @@ val appendStringList_def = Define `
 	appendStringList = appendList o MAP List`;
 
 val lit_toString_def = Define `
-	(lit_toString (JSBigInt n) = appendStringList ["bigInt("; toString n; ")"]) /\
+	(lit_toString (JSBigInt n) = appendStringList ["bigInt('"; toString n; "')"]) /\
 	(lit_toString (JSString s) = appendStringList ["'"; s; "'"]) /\
 	(lit_toString (JSBool T) = List "true") /\
 	(lit_toString (JSBool F) = List "false") /\
@@ -27,6 +27,19 @@ val uop_toString_def = Define `
 
 val bop_toString_def = Define `
   (bop_toString JSPlus a b = appendList [a; List "+"; b]) /\
+  (bop_toString JSMinus a b = appendList [a; List "-"; b]) /\
+  (bop_toString JSTimes a b = appendList [a; List "*"; b]) /\
+  (bop_toString JSDivide a b = appendList [a; List "/"; b]) /\
+  (bop_toString JSModulo a b = appendList [a; List "%"; b]) /\
+  (bop_toString JSLt a b = appendList [a; List "<"; b]) /\
+  (bop_toString JSLeq a b = appendList [a; List "<="; b]) /\
+  (bop_toString JSGt a b = appendList [a; List ">"; b]) /\
+  (bop_toString JSGeq a b = appendList [a; List ">="; b]) /\
+	(bop_toString JSAnd a b = appendList [a; List " && "; b]) /\
+	(bop_toString JSOr a b = appendList [a; List " || "; b]) /\
+	(bop_toString JSEq a b = appendList [List "cmljs_eq("; a; List ", "; b; List ")"]) /\
+	(bop_toString JSNeq a b = appendList [List "!cmljs_eq("; a; List ", "; b; List ")"]) /\
+  (bop_toString JSComma a b = appendList [a; List ","; b]) /\
 	(bop_toString JSIntPlus a b = appendList [a; List ".add("; b; List ")"]) /\
 	(bop_toString JSIntMinus a b = appendList [a; List ".subtract("; b; List ")"]) /\
 	(bop_toString JSIntTimes a b = appendList [a; List ".multiply("; b; List ")"]) /\
@@ -35,12 +48,7 @@ val bop_toString_def = Define `
 	(bop_toString JSIntLt a b = appendList [a; List ".lesser("; b; List ")"]) /\
 	(bop_toString JSIntLeq a b = appendList [a; List ".lesserOrEquals("; b; List ")"]) /\
 	(bop_toString JSIntGt a b = appendList [a; List ".greater("; b; List ")"]) /\
-	(bop_toString JSIntGeq a b = appendList [a; List ".greaterOrEquals("; b; List ")"]) /\
-	(bop_toString JSAnd a b = appendList [a; List " && "; b]) /\
-	(bop_toString JSOr a b = appendList [a; List " || "; b]) /\
-	(bop_toString JSEq a b = appendList [List "cmljs_eq("; a; List ", "; b; List ")"]) /\
-	(bop_toString JSNeq a b = appendList [List "!cmljs_eq("; a; List ", "; b; List ")"]) /\
-  (bop_toString JSComma a b = appendList [a; List ","; b])`;
+	(bop_toString JSIntGeq a b = appendList [a; List ".greaterOrEquals("; b; List ")"])`;
 
 val bindElement_toString_def = tDefine "bindElement_toString" `
 	(bindElement_toString (JSBVar name) = List name) /\
@@ -59,6 +67,8 @@ val bindElement_toString_def = tDefine "bindElement_toString" `
 val toString_defn = Defn.Hol_multi_defns `
 	(exp_toString (JSLit lit) = lit_toString lit) /\
 	(exp_toString (JSArray exps) = appendList [List "["; join "," (MAP exp_toString exps); List "]"]) /\
+	(exp_toString (JSIndex exp n) =
+		appendList [exp_toString exp; List "["; exp_toString n; List "]"]) /\
 	(exp_toString (JSAFun pars body) = appendList [List "(function(";
 			join "," (MAP bindElement_toString pars); List ") { "; stms_toString body; List " })"]) /\
 	(exp_toString (JSFun name pars body) = appendList [List "(function "; List name; List "(";
@@ -90,6 +100,7 @@ val toString_defn = Defn.Hol_multi_defns `
 					stm_toString (SND (SND m)); List " }"])
 				methods
 		in appendList [List "class"; name'; extends'; List " {"; join " " methods'; List "}"]) /\
+	(exp_toString (Exp_not_compiled _) = List "Expression not supported by compiler") /\
 
   (stm_toString (JSBlock stms) = appendList [List "{ "; stms_toString stms; List " }"]) /\
 	(stm_toString (JSExp exp) = appendList [exp_toString exp; List ";"]) /\
@@ -106,6 +117,8 @@ val toString_defn = Defn.Hol_multi_defns `
   (stm_toString (JSTryCatch try bind catch) = appendList [List "try { "; stms_toString try;
     List " } catch("; bindElement_toString bind; List ") { "; stms_toString catch; List " }"]) /\
   (stm_toString JSEmpty = List ";") /\
+	(stm_toString (Dec_not_compiled _) = List "Declaration not supported by compiler") /\
+	(stm_toString (Top_not_compiled _) = List "Top not supported by compiler") /\
 
 	(stms_toString [] = Nil) /\
 	(stms_toString (stm::stms) = Append (stm_toString stm) (stms_toString stms))`;

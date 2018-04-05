@@ -15,14 +15,18 @@
   Fix pany
   assign, objectassing
   comma separated list
-arrays
-ffi
-char
+  ffi
+  char
+ListAppend
+  arrays
+modules?
 
   Semantik för deconstruction och spread
   Semantik för funktionsapplication inklusive spread
   Semantik för return
+  Hantera fel i semantiken för dekonstruction
+Testa semantik
 
-Kompilera stora program med hål
+  Kompilera stora program med hål
 kompilera basis
 
