@@ -1,5 +1,5 @@
 (*
-open preamble compilerTheory jsSemanticsTheory jsBackendTheory
+open preamble jsCompilerTheory jsAstTheory jsSemanticsTheory jsBackendTheory
 		 semanticPrimitivesTheory evaluateTheory terminationTheory stringTheory;
 
 val _ = new_theory "jsProof"
@@ -13,7 +13,7 @@ val flattenScopes_def = Define `
     in <| eid := eid; lexEnv := FLAT scopes' |>`;
 
 val (v_rel_rules, v_rel_ind, v_rel_cases) = Hol_reln `
-	(!i. v_rel (Litv (IntLit i)) (JSLitv (JSInteger i))) /\
+	(!i. v_rel (Litv (IntLit i)) (JSLitv (JSBigInt i))) /\
 	(!s. v_rel (Litv (StrLit s)) (JSLitv (JSString s))) /\
 	(v_rel (Conv (SOME (TypeStamp "true" bool_type_num)) []) (JSLitv (JSBool T))) /\
 	(v_rel (Conv (SOME (TypeStamp "false" bool_type_num)) []) (JSLitv (JSBool F)))`;

@@ -44,7 +44,9 @@ val a = compile' ``
 		(App Aalloc [Lit (IntLit 5); Lit (StrLit "foo")]));
 	Tdec (Dlet unknown_loc (Pvar "b")
 		(App Aupdate
-			[Var (Short "a"); Lit (IntLit 3); Lit (StrLit "bar")]))]`` |> jseval;
+			[Var (Short "a"); Lit (IntLit 3); Lit (StrLit "bar")]));
+	Tdec (Dlet unknown_loc (Pvar "b")
+		(App Asub [Var (Short "a"); Lit (IntLit 3)]))]`` |> jseval;
 
 val a = compile `
 	val _ = #(sum) 1 2 3;`;
