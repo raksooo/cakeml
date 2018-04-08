@@ -264,7 +264,7 @@ val imports_def = Define `
 	imports = [
 		JSVarDecl (JSBVar "bigInt") (JSApp (JSVar "require") [JSLit (JSString "./BigInteger.min.js")]);
 		JSVarDecl (JSBObject [("cmljs_append", NONE);("cmljs_eq", NONE);("cmljs_doesmatch", NONE)])
-			(JSApp (JSVar "require") [JSLit (JSString "./patternmatch.js")])]`;
+			(JSApp (JSVar "require") [JSLit (JSString "./cmljs_utils.js")])]`;
 
 val compile_prog_def = Define `
 	compile_prog tops = OPTION_MAP ($++ imports o FLAT) (sequenceOption (MAP compile_top tops))`;
