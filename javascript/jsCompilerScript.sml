@@ -49,6 +49,12 @@ val a = compile' ``
 		(App Asub [Var (Short "a"); Lit (IntLit 3)]))]`` |> jseval;
 
 val a = compile `
+	fun containsFive l = case l of
+      [] => false
+    | 5 :: _ => true
+    | _ :: l2 => containsFive l2;`;
+
+val a = compile `
 	val _ = #(sum) 1 2 3;`;
 
 val a = process_topdecs `
