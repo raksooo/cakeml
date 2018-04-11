@@ -105,7 +105,7 @@ val errorStm_def = Define `
 
 val compile_pattern_match_def = Define `
 	(compile_pattern_match [] _ = errorStm (JSUop JSNew (JSApp (JSVar "Error")
-			[JSLit (JSString "Pattern and expression have incompatible types")]))) /\
+			[JSLit (JSString "Exception- Bind raised")]))) /\
 	(compile_pattern_match ((p, exp)::ps) content = JSConditional
 			(JSApp (JSVar "cmljs_doesmatch") [compile_pat p; content])
 			(JSApp (JSAFun [SND (create_deconstructor 0 p)] [JSReturn exp]) [content])

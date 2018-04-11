@@ -248,11 +248,10 @@ val a = compile `
 		(y :: ys) => ys;`;
 
 val a = compile `
-	datatype l = Nil | Dot l l;
-	fun size x = case x of
+	datatype 'a tree = Nil | Tree 'a ('a tree) ('a tree);
+	fun size t = case t of
 			Nil => 1
-		| Dot l1 l2 => size l1 + size l2;
-	val a = size (Dot Nil (Dot Nil Nil));`;
+		| Tree _ a a => 1 + size l1 + size l2;`;
 
 val a = compile `
 	val _ = [2 = 2, 2 = 3, 2 = "foo", "foo" = "foo", "foo" = "bar",
@@ -267,8 +266,8 @@ val a = compile `
 	val (Foo (Foo n)) = Foo (Foo 4);`;
 
 val a = compile `
-	exception Error int string;
-	val _ = raise (Error 5 "foo");`;
+	exception Error int;
+	val _ = raise (Error 5);`;
 
 val a = compile `
 	exception Error;

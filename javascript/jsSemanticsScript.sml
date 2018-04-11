@@ -191,6 +191,15 @@ val declareMultiple_def = Define `
 
 val js_exp_size_not_zero = Q.prove(`!exp. 0 < js_exp_size exp`, Cases >> rw [js_exp_size_def]);
 
+val isFunDecl_def = Define `
+  isFunDecl _ = F`;
+
+val isVarDecl_def = Define `
+  (isVarDecl (JSVarDecl _ _) = T) /\
+  (isVarDecl (JSLet _ _) = T) /\
+  (isVarDecl (JSConst _ _) = T) /\
+  (isVarDecl _ = F)`;
+
 val evaluate_defns = Defn.Hol_multi_defns `
 	(js_evaluate_exp st env [] = (st, env, JSRval [])) /\
 
@@ -273,21 +282,21 @@ val evaluate_defns = Defn.Hol_multi_defns `
 
 	(js_evaluate_exp st env _ = (st, env, NOT_IMPLEMENTED)) /\
 
-	(js_evaluate_stm st env [] = (st, env, JSRval [])) /\
-	(js_evaluate_stm st env ((JSReturn exp)::ss) = js_evaluate_exp st env [exp]) /\
-	(js_evaluate_stm st env (s1::s2::ss) = case js_evaluate_stm st env [s1] of
-			| (st', env', JSRval v1) => (case js_evaluate_stm st' env' (s2::ss) of
+	(js_evaluate_stm2 st env [] = (st, env, JSRval [])) /\
+	(js_evaluate_stm2 st env ((JSReturn exp)::ss) = js_evaluate_exp st env [exp]) /\
+	(js_evaluate_stm2 st env (s1::s2::ss) = case js_evaluate_stm2 st env [s1] of
+			| (st', env', JSRval v1) => (case js_evaluate_stm2 st' env' (s2::ss) of
 					| (st2, env2, JSRval vs) => (st2, env2, JSRval (HD v1::vs))
 					| res => res)
 			| res => res) /\
-	(js_evaluate_stm st env [JSExp exp] = js_evaluate_exp st env [exp]) /\
-	(js_evaluate_stm st env [JSVarDecl be exp] = case js_evaluate_exp st env [exp] of
+	(js_evaluate_stm2 st env [JSExp exp] = js_evaluate_exp st env [exp]) /\
+	(js_evaluate_stm2 st env [JSVarDecl be exp] = case js_evaluate_exp st env [exp] of
 			| (st', env', JSRval [v]) => 
 				(case OPTION_BIND (js_evaluate_bind be v) (declareMultiple envVarDeclare env') of
 					| SOME env2 => (st', env2, JSRval [JSUndefined])
 					| NONE => (st', env', JSRerr "Invalid pattern"))
 			| res => res) /\
-	(js_evaluate_stm st env [JSLet be exp] = case js_evaluate_exp st env [exp] of
+	(js_evaluate_stm2 st env [JSLet be exp] = case js_evaluate_exp st env [exp] of
 			| (st', env', JSRval [v]) => (case js_evaluate_bind be v of
 				| SOME vs => (case declareMultiple envLetDeclare env' vs of
 					| SOME env2 => (st', env2, JSRval [JSUndefined])
@@ -295,7 +304,7 @@ val evaluate_defns = Defn.Hol_multi_defns `
 							JSRerr "SyntaxError: Identifier has already been declared"))
 				| NONE => (st', env', JSRerr "Invalid pattern"))
 			| res => res) /\
-	(js_evaluate_stm st env [JSConst be exp] = case js_evaluate_exp st env [exp] of
+	(js_evaluate_stm2 st env [JSConst be exp] = case js_evaluate_exp st env [exp] of
 			| (st', env', JSRval [v]) => (case js_evaluate_bind be v of
 				| SOME vs => (case declareMultiple envLetDeclare env' vs of
 					| SOME env2 => (st', env2, JSRval [JSUndefined])
@@ -303,7 +312,13 @@ val evaluate_defns = Defn.Hol_multi_defns `
 							JSRerr ("SyntaxError: Identifier has already been declared")))
 				| NONE => (st', env', JSRerr "Invalid pattern"))
 			| res => res) /\
-	(js_evaluate_stm st env _ = (st, env, NOT_IMPLEMENTED))`;
+	(js_evaluate_stm2 st env _ = (st, env, NOT_IMPLEMENTED)) /\
+
+  (js_evaluate_stm st env stms = let
+      funs = FILTER isFunDecl stms;
+      vars = FILTER isVarDecl stms;
+      others = FILTER (\stm. ~ (isFunDecl stm \/ isVarDecl stm)) stms
+    in js_evaluate_stm2 st env (funs ++ vars ++ others))`;
 
 val _ = Lib.with_flag (computeLib.auto_import_definitions, false) (List.map Defn.save_defn) evaluate_defns;
 val js_evaluate_exp_def = fetch "-" "js_evaluate_exp_def";
