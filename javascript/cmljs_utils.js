@@ -1,11 +1,16 @@
 
 function cmljs_append(a, b) {
   if (Array.isArray(a) && Array.isArray(b)) {
-    return a.concat(b)
+    return a[0].cmlg_char
+      ? a.concat(b).reduce((a, b) => a + b.cmlg_char, "")
+      : a.concat(b)
   } else if (typeof a === 'string' && typeof b === 'string') {
     return a + b
+  } else if (Array.isArray(a) && typeof b === 'string') {
+    return a.reduce((a, b) => a + b.cmlg_char, "") + b
+  } else if (typeof a === 'string' && Array.isArray(b)) {
+    return b.reduce((a, b) => a + b.cmlg_char, a)
   }
-  // todo chars
 }
 
 function every2(as, bs, f) {

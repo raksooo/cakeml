@@ -162,6 +162,7 @@ val compile_app_def = tDefine "compile_app" `
 		js_unit]) /\
 	(compile_app Asub (exp1::exp2::_) = SOME [JSIndex (JSObjectProp exp1 (addGenPrefix "array"))
 			(JSApp (JSObjectProp exp2 "toJSNumber") [])]) /\
+  (compile_app ListAppend exps = SOME [JSApp (JSVar "cmljs_append") exps]) /\
 	(compile_app _ _ = NONE)` cheat;
 
 val compile_defns = Defn.Hol_multi_defns `

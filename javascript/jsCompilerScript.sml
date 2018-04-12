@@ -25,6 +25,10 @@ val a = compile' ``
 
 val a = compile' ``
 	[Tdec (Dlet unknown_loc Pany
+		(App ListAppend [Lit (StrLit "foo"); Lit (StrLit "bar")]))]`` |> jseval;
+
+val a = compile' ``
+	[Tdec (Dlet unknown_loc Pany
 		(App AallocEmpty []))]`` |> jseval;
 
 val a = compile' ``
